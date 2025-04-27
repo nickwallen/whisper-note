@@ -4,25 +4,23 @@
 
 An app that can access your daily notes allowing you to ask questions about them.
 
-Use Case:
-
-Summarize the work that I completed this week?
-
-What updates should I provide for stand-up?
+Use Cases:
+* Summarize the work that I completed this week?
+* What updates should I provide for stand-up?
 
 ## Plan
 
 ### Index
 
-read from a directory of markdown or text files
+Read from a directory of markdown or text files
 
-chunk the content from the files no larger than X
+Chunk the content from the files no larger than X
 
-add additional metadata like create/modified time and file name
+Add additional metadata like create/modified time and file name
 
-create embeddings for each chunk
+Create embeddings for each chunk
 
-store embeddings in a simple local vector store (like ChromaDB)
+Store embeddings in a simple local vector store (like ChromaDB)
 
 ### Query
 
