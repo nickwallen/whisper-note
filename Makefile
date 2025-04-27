@@ -9,4 +9,7 @@ install:
 run:
 	$(UVICORN) main:app --reload --port 8000
 
-.PHONY: install run
+test:
+	$(VENV)/bin/pytest
+
+.PHONY: install run test
