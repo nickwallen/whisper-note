@@ -35,20 +35,98 @@ def temp_dir_with_files():
 def test_indexer_basic(temp_dir_with_files):
     # Use dummy embedder/chunker for speed and determinism
     indexer = Indexer(embedder=DummyEmbedder(), chunker=DummyChunker(), vector_store=VectorStore(collection_name="test_indexer"))
-    num_files, num_chunks = indexer.index_directory(temp_dir_with_files, file_extensions=[".txt"])
-    assert num_files == 3
-    assert num_chunks == 7  # 2 in a.txt, 3 in b.txt, 2 in c.txt
+    metrics = indexer.index_directory(temp_dir_with_files, file_extensions=[".txt"])
+    assert metrics.file_count == 3
+    assert metrics.chunk_count == 7  # 2 in a.txt, 3 in b.txt, 2 in c.txt
+    assert set(metrics.files_indexed) == {"a.txt", "b.txt", os.path.join("subdir", "c.txt")}
+    assert metrics.chunks_per_file["a.txt"] == 2
+    assert metrics.chunks_per_file["b.txt"] == 3
+    assert metrics.chunks_per_file[os.path.join("subdir", "c.txt")] == 2
+    assert metrics.empty_files == []
+    assert metrics.extensions_indexed == {".txt"}
 
 def test_indexer_empty_dir():
     temp_dir = tempfile.mkdtemp()
     indexer = Indexer(embedder=DummyEmbedder(), chunker=DummyChunker(), vector_store=VectorStore(collection_name="test_indexer_empty"))
-    num_files, num_chunks = indexer.index_directory(temp_dir, file_extensions=[".txt"])
-    assert num_files == 0
-    assert num_chunks == 0
+    metrics = indexer.index_directory(temp_dir, file_extensions=[".txt"])
+    assert metrics.file_count == 0
+    assert metrics.chunk_count == 0
+    assert metrics.files_indexed == []
+    assert metrics.chunks_per_file == {}
+    assert metrics.empty_files == []
+    assert metrics.extensions_indexed == set()
     shutil.rmtree(temp_dir)
 
 def test_indexer_non_matching_extensions(temp_dir_with_files):
     indexer = Indexer(embedder=DummyEmbedder(), chunker=DummyChunker(), vector_store=VectorStore(collection_name="test_indexer_nomatch"))
-    num_files, num_chunks = indexer.index_directory(temp_dir_with_files, file_extensions=[".md"])  # No .md files
-    assert num_files == 0
-    assert num_chunks == 0
+    metrics = indexer.index_directory(temp_dir_with_files, file_extensions=[".md"])  # No .md files
+    assert metrics.file_count == 0
+    assert metrics.chunk_count == 0
+    assert metrics.files_indexed == []
+    assert metrics.chunks_per_file == {}
+    assert metrics.empty_files == []
+    assert metrics.extensions_indexed == set()
+
+def test_indexer_file_no_extension():
+    import tempfile, shutil
+    temp_dir = tempfile.mkdtemp()
+    file_path = os.path.join(temp_dir, "filewithoutext")
+    with open(file_path, "w") as f:
+        f.write("line1\nline2\n")
+    indexer = Indexer(embedder=DummyEmbedder(), chunker=DummyChunker(), vector_store=VectorStore(collection_name="test_indexer_noext"))
+    metrics = indexer.index_directory(temp_dir)
+    assert metrics.file_count == 1
+    assert metrics.chunk_count == 2
+    assert metrics.files_indexed == ["filewithoutext"]
+    assert metrics.chunks_per_file["filewithoutext"] == 2
+    assert metrics.empty_files == []
+    assert metrics.extensions_indexed == set()
+    shutil.rmtree(temp_dir)
+
+def test_indexer_file_whitespace_only():
+    import tempfile, shutil
+    temp_dir = tempfile.mkdtemp()
+    file_path = os.path.join(temp_dir, "whitespace.txt")
+    with open(file_path, "w") as f:
+        f.write("   \n   \n")
+    indexer = Indexer(embedder=DummyEmbedder(), chunker=DummyChunker(), vector_store=VectorStore(collection_name="test_indexer_ws"))
+    metrics = indexer.index_directory(temp_dir, file_extensions=[".txt"])
+    assert metrics.file_count == 1
+    assert metrics.chunk_count == 0
+    assert metrics.files_indexed == []
+    assert metrics.chunks_per_file == {}
+    assert metrics.empty_files == ["whitespace.txt"]
+    assert metrics.extensions_indexed == {".txt"}
+    shutil.rmtree(temp_dir)
+
+def test_indexer_file_empty():
+    import tempfile, shutil
+    temp_dir = tempfile.mkdtemp()
+    file_path = os.path.join(temp_dir, "empty.txt")
+    with open(file_path, "w") as f:
+        pass  # Write nothing
+    indexer = Indexer(embedder=DummyEmbedder(), chunker=DummyChunker(), vector_store=VectorStore(collection_name="test_indexer_emptyfile"))
+    metrics = indexer.index_directory(temp_dir, file_extensions=[".txt"])
+    assert metrics.file_count == 1
+    assert metrics.chunk_count == 0
+    assert metrics.files_indexed == []
+    assert metrics.chunks_per_file == {}
+    assert metrics.empty_files == ["empty.txt"]
+    assert metrics.extensions_indexed == {".txt"}
+    shutil.rmtree(temp_dir)
+
+def test_indexer_file_non_txt_extension():
+    import tempfile, shutil
+    temp_dir = tempfile.mkdtemp()
+    file_path = os.path.join(temp_dir, "note.md")
+    with open(file_path, "w") as f:
+        f.write("alpha\nbeta\n")
+    indexer = Indexer(embedder=DummyEmbedder(), chunker=DummyChunker(), vector_store=VectorStore(collection_name="test_indexer_md"))
+    metrics = indexer.index_directory(temp_dir, file_extensions=[".md"])
+    assert metrics.file_count == 1
+    assert metrics.chunk_count == 2
+    assert metrics.files_indexed == ["note.md"]
+    assert metrics.chunks_per_file["note.md"] == 2
+    assert metrics.empty_files == []
+    assert metrics.extensions_indexed == {".md"}
+    shutil.rmtree(temp_dir)
