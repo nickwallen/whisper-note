@@ -35,7 +35,10 @@ class Chunker:
             start += self.chunk_size - self.overlap if self.chunk_size > self.overlap else self.chunk_size
         return chunks
 
-    def chunk_file(self, file_path: str, encoding: str = "utf-8") -> List[str]:
-        with open(file_path, "r", encoding=encoding) as f:
-            text = f.read()
-        return self.chunk_text(text)
+    def chunk_file(self, file_path: str) -> List[str]:
+        try:
+            with open(file_path, "r", encoding="utf-8") as f:
+                text = f.read()
+            return self.chunk_text(text)
+        except UnicodeDecodeError as e:
+            raise Exception(f"UnicodeDecodeError in file {file_path}: {e}")

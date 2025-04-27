@@ -9,10 +9,9 @@ from vector_store import VectorStore
 class IndexerMetrics:
     file_count: int
     chunk_count: int
-    files_indexed: List[str]
-    chunks_per_file: Dict[str, int]
     empty_files: List[str] = field(default_factory=list)
     extensions_indexed: Set[str] = field(default_factory=set)
+    failed_files: List[dict] = field(default_factory=list)  # List of {"file": ..., "error": ...}
 
 class Indexer:
     def __init__(self, 
@@ -31,16 +30,19 @@ class Indexer:
         """
         files = self._find_files(directory, file_extensions)
         chunk_count = 0
-        files_indexed = []
-        chunks_per_file = {}
         empty_files = []
         extensions_indexed = set()
+        failed_files = []
         for file_path in files:
             rel_path = os.path.relpath(file_path, directory)
             ext = os.path.splitext(file_path)[1].lower()
             if ext:
                 extensions_indexed.add(ext)
-            chunks = self.chunker.chunk_file(file_path)
+            try:
+                chunks = self.chunker.chunk_file(file_path)
+            except Exception as e:
+                failed_files.append({"file": rel_path, "error": str(e)})
+                continue
             embeddings = self.embedder.embed(chunks) if chunks else []
             ids = []
             metadatas = []
@@ -49,18 +51,15 @@ class Indexer:
                 metadatas.append({"file": rel_path, "chunk_index": i, "text": chunk})
             if ids:
                 self.vector_store.add(ids, embeddings, metadatas)
-                files_indexed.append(rel_path)
-                chunks_per_file[rel_path] = len(ids)
                 chunk_count += len(ids)
             else:
                 empty_files.append(rel_path)
         return IndexerMetrics(
             file_count=len(files),
             chunk_count=chunk_count,
-            files_indexed=files_indexed,
-            chunks_per_file=chunks_per_file,
             empty_files=empty_files,
             extensions_indexed=extensions_indexed,
+            failed_files=failed_files,
         )
 
     def _find_files(self, directory: str, file_extensions: Optional[List[str]] = None) -> List[str]:
