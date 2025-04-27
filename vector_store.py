@@ -7,6 +7,13 @@ class VectorStore:
         self.client = chromadb.Client(Settings(persist_directory=persist_directory))
         self.collection = self.client.get_or_create_collection(collection_name)
 
+    def delete_by_file_path(self, rel_path: str):
+        """
+        Delete all vectors whose metadata['file'] matches rel_path.
+        """
+        # ChromaDB delete API allows filtering by metadata
+        self.collection.delete(where={"file": rel_path})
+
     def add(self, ids: List[str], embeddings: List[List[float]], metadatas: Optional[List[Dict]] = None):
         """
         Add embeddings to the vector store.

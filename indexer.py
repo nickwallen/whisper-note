@@ -4,6 +4,7 @@ from dataclasses import dataclass, field
 from embeddings import Embedder
 from chunker import Chunker
 from vector_store import VectorStore
+import hashlib
 
 @dataclass
 class IndexerMetrics:
@@ -38,6 +39,16 @@ class Indexer:
             ext = os.path.splitext(file_path)[1].lower()
             if ext:
                 extensions_indexed.add(ext)
+            # Compute file hash (SHA256)
+            try:
+                with open(file_path, 'rb') as f:
+                    file_bytes = f.read()
+                file_hash = hashlib.sha256(file_bytes).hexdigest()
+            except Exception as e:
+                failed_files.append({"file": rel_path, "error": f"Hash error: {str(e)}"})
+                continue
+            # Clean up old vectors for this file path
+            self.vector_store.delete_by_file_path(rel_path)
             try:
                 chunks = self.chunker.chunk_file(file_path)
             except Exception as e:
@@ -47,8 +58,8 @@ class Indexer:
             ids = []
             metadatas = []
             for i, chunk in enumerate(chunks):
-                ids.append(f"{rel_path}::chunk{i}")
-                metadatas.append({"file": rel_path, "chunk_index": i, "text": chunk})
+                ids.append(f"{file_hash}::chunk{i}")
+                metadatas.append({"file": rel_path, "file_hash": file_hash, "chunk_index": i, "text": chunk})
             if ids:
                 self.vector_store.add(ids, embeddings, metadatas)
                 chunk_count += len(ids)
