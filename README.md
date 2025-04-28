@@ -27,7 +27,7 @@ curl -s -X POST "http://localhost:8000/api/v1/index" \
 curl -s -X POST "http://localhost:8000/api/v1/query" \
   -H "Content-Type: application/json" \
   -d '{
-    "query": "What updates should I provide for stand-up?"
+    "query": "What did I get done last week?"
   }' | jq
 ```
 

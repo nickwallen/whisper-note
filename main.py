@@ -1,17 +1,25 @@
-from fastapi import FastAPI, Request
+from fastapi import FastAPI
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from typing import List, Optional
-from indexer import Indexer, IndexerMetrics
+from indexer import Indexer
 from fastapi.encoders import jsonable_encoder
 from query import QueryEngine
 import traceback
+import logging
+
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+for mod in ["query", "indexer", "vector_store", "chunker"]:
+    logging.getLogger(mod).setLevel(logging.DEBUG)
 
 app = FastAPI()
+
 
 @app.get("/api/v1/health")
 def health_check():
     return JSONResponse(content={"status": "ok"})
+
 
 class IndexRequest(BaseModel):
     directory: str
@@ -27,22 +35,24 @@ def index_directory(request: IndexRequest):
         metrics = indexer.index_dir(directory, file_exts=file_extensions)
         return JSONResponse(content=jsonable_encoder(metrics))
     except Exception as e:
-        return JSONResponse(status_code=500, content={
-            "error": str(e),
-            "traceback": traceback.format_exc()
-        })
+        return JSONResponse(
+            status_code=500,
+            content={"error": str(e), "traceback": traceback.format_exc()},
+        )
+
 
 class QueryRequest(BaseModel):
     query: str
+
 
 @app.post("/api/v1/query")
 def query_endpoint(request: QueryRequest):
     try:
         engine = QueryEngine()
-        formatted = engine.query(request.query, n_results=5)
-        return JSONResponse(content={"results": formatted})
+        result = engine.query(request.query, n_results=5)
+        return JSONResponse(content={"results": jsonable_encoder(result)})
     except Exception as e:
-        return JSONResponse(status_code=500, content={
-            "error": str(e),
-            "traceback": traceback.format_exc()
-        })
+        return JSONResponse(
+            status_code=500,
+            content={"error": str(e), "traceback": traceback.format_exc()},
+        )

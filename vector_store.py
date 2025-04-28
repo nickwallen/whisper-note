@@ -29,7 +29,7 @@ class VectorStore:
         """
         self.collection.add(ids=ids, embeddings=embeddings, metadatas=metadatas)
 
-    def query(self, embedding: List[float], n_results: int = 3):
+    def query(self, embedding: List[float], n_results: int = 3) -> chromadb.QueryResult:
         """
         Query the vector store for the most similar embeddings.
         embedding: The query embedding vector
