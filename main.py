@@ -4,7 +4,7 @@ from pydantic import BaseModel
 from typing import List, Optional
 from indexer import Indexer, IndexerMetrics
 from fastapi.encoders import jsonable_encoder
-from query_engine import QueryEngine
+from query import QueryEngine
 import traceback
 
 app = FastAPI()

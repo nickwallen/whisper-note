@@ -1,5 +1,5 @@
 import pytest
-from query_engine import QueryEngine
+from query import QueryEngine
 
 class DummyEmbedder:
     def embed(self, texts):
@@ -19,7 +19,7 @@ class DummyVectorStore:
             "distances": [float(i) for i in range(n_results)],
         }
 
-def test_query_engine_basic():
+def test_query_basic():
     engine = QueryEngine(embedder=DummyEmbedder(), vector_store=DummyVectorStore())
     results = engine.query("test", n_results=3)
     assert isinstance(results, dict)
@@ -33,7 +33,7 @@ def test_query_engine_basic():
         assert item["distance"] == float(i)
     assert "answer" in results
 
-def test_query_engine_empty():
+def test_query_empty():
     class EmptyVectorStore(DummyVectorStore):
         def query(self, embedding, n_results=5):
             return {"ids": [], "documents": [], "metadatas": [], "distances": []}
@@ -44,7 +44,7 @@ def test_query_engine_empty():
     assert results["context"] == []
     assert "answer" in results
 
-def test_query_engine_handles_missing_fields():
+def test_query_handles_missing_fields():
     class PartialVectorStore(DummyVectorStore):
         def query(self, embedding, n_results=2):
             return {"ids": ["a", "b"]}  # missing other fields
