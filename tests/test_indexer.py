@@ -30,16 +30,14 @@ def temp_dir_with_files():
         with open(abs_path, "w") as f:
             f.write(content)
     yield temp_dir
-    shutil.rmtree(temp_dir)
-
+    
 def test_indexer_basic(temp_dir_with_files):
     # Use dummy embedder/chunker for speed and determinism
     indexer = Indexer(embedder=DummyEmbedder(), chunker=DummyChunker(), vector_store=VectorStore(collection_name="test_indexer"))
     metrics = indexer.index_directory(temp_dir_with_files, file_extensions=[".txt"])
     assert metrics.file_count == 3
     assert metrics.chunk_count == 7  # 2 in a.txt, 3 in b.txt, 2 in c.txt
-    assert metrics.extensions_indexed == {".txt"}
-    # Check that all chunks have modification_time metadata
+        # Check that all chunks have modification_time metadata
     for file in ["a.txt", "b.txt", "subdir/c.txt"]:
         results = indexer.vector_store.collection.get(where={"file": file})
         for md in results["metadatas"]:
@@ -70,7 +68,6 @@ def test_indexer_skips_unchanged_file():
     metrics3 = indexer.index_directory(temp_dir, file_extensions=[".txt"])
     count3 = len(indexer.vector_store.collection.get(where={"file": "foo.txt"})["ids"])
     assert count3 == 2  # Still two, but new content
-    shutil.rmtree(temp_dir)
 
 def test_indexer_empty_dir():
     temp_dir = tempfile.mkdtemp()
@@ -78,16 +75,13 @@ def test_indexer_empty_dir():
     metrics = indexer.index_directory(temp_dir, file_extensions=[".txt"])
     assert metrics.file_count == 0
     assert metrics.chunk_count == 0
-    assert metrics.extensions_indexed == set()
-    shutil.rmtree(temp_dir)
-
+    
 def test_indexer_non_matching_extensions(temp_dir_with_files):
     indexer = Indexer(embedder=DummyEmbedder(), chunker=DummyChunker(), vector_store=VectorStore(collection_name="test_indexer_nomatch"))
     metrics = indexer.index_directory(temp_dir_with_files, file_extensions=[".md"])  # No .md files
     assert metrics.file_count == 0
     assert metrics.chunk_count == 0
-    assert metrics.extensions_indexed == set()
-
+    
 def test_indexer_file_no_extension():
     import tempfile, shutil
     temp_dir = tempfile.mkdtemp()
@@ -98,9 +92,7 @@ def test_indexer_file_no_extension():
     metrics = indexer.index_directory(temp_dir)
     assert metrics.file_count == 1
     assert metrics.chunk_count == 2
-    assert metrics.extensions_indexed == set()
-    shutil.rmtree(temp_dir)
-
+    
 def test_indexer_file_whitespace_only():
     import tempfile, shutil
     temp_dir = tempfile.mkdtemp()
@@ -111,9 +103,7 @@ def test_indexer_file_whitespace_only():
     metrics = indexer.index_directory(temp_dir, file_extensions=[".txt"])
     assert metrics.file_count == 1
     assert metrics.chunk_count == 0
-    assert metrics.extensions_indexed == {".txt"}
-    shutil.rmtree(temp_dir)
-
+    
 def test_indexer_file_empty():
     import tempfile, shutil
     temp_dir = tempfile.mkdtemp()
@@ -124,9 +114,7 @@ def test_indexer_file_empty():
     metrics = indexer.index_directory(temp_dir, file_extensions=[".txt"])
     assert metrics.file_count == 1
     assert metrics.chunk_count == 0
-    assert metrics.extensions_indexed == {".txt"}
-    shutil.rmtree(temp_dir)
-
+    
 def test_indexer_file_non_txt_extension():
     import tempfile, shutil
     temp_dir = tempfile.mkdtemp()
@@ -137,5 +125,4 @@ def test_indexer_file_non_txt_extension():
     metrics = indexer.index_directory(temp_dir, file_extensions=[".md"])
     assert metrics.file_count == 1
     assert metrics.chunk_count == 2
-    assert metrics.extensions_indexed == {".md"}
-    shutil.rmtree(temp_dir)
+    

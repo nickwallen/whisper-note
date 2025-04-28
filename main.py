@@ -25,10 +25,7 @@ def index_directory(request: IndexRequest):
     try:
         indexer = Indexer()
         metrics: IndexerMetrics = indexer.index_directory(directory, file_extensions=file_extensions)
-        # Convert set to list for JSON serialization
         metrics_dict = jsonable_encoder(metrics)
-        if "extensions_indexed" in metrics_dict and isinstance(metrics_dict["extensions_indexed"], set):
-            metrics_dict["extensions_indexed"] = list(metrics_dict["extensions_indexed"])
         return JSONResponse(content=metrics_dict)
     except Exception as e:
         import traceback

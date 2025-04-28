@@ -10,7 +10,6 @@ import hashlib
 class IndexerMetrics:
     file_count: int
     chunk_count: int
-    extensions_indexed: Set[str] = field(default_factory=set)
     failed_files: List[dict] = field(default_factory=list)  # List of {"file": ..., "error": ...}
 
 class Indexer:
@@ -30,13 +29,9 @@ class Indexer:
         """
         files = self._find_files(directory, file_extensions)
         chunk_count = 0
-        extensions_indexed = set()
         failed_files = []
         for file_path in files:
             rel_path = os.path.relpath(file_path, directory)
-            ext = os.path.splitext(file_path)[1].lower()
-            if ext:
-                extensions_indexed.add(ext)
             # Compute file hash (SHA256)
             try:
                 with open(file_path, 'rb') as f:
@@ -76,7 +71,6 @@ class Indexer:
         return IndexerMetrics(
             file_count=len(files),
             chunk_count=chunk_count,
-            extensions_indexed=extensions_indexed,
             failed_files=failed_files,
         )
 
