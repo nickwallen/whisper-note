@@ -12,7 +12,7 @@ class Chunker:
     """
 
     def __init__(
-        self, chunk_size: int = 512, overlap: int = 0, split_on: Optional[str] = r""
+        self, chunk_size: int = 512, overlap: int = 0, split_on: Optional[str] = r"\n\n"
     ):
         """
         chunk_size: number of characters per chunk (default)

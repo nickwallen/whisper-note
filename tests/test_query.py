@@ -1,5 +1,5 @@
 import pytest
-from query import QueryEngine
+from query import QueryEngine, QueryResult
 
 class DummyEmbedder:
     def embed(self, texts):
@@ -22,16 +22,16 @@ class DummyVectorStore:
 def test_query_basic():
     engine = QueryEngine(embedder=DummyEmbedder(), vector_store=DummyVectorStore())
     results = engine.query("test", n_results=3)
-    assert isinstance(results, dict)
-    assert "context" in results
-    assert isinstance(results["context"], list)
-    assert len(results["context"]) == 3
-    for i, item in enumerate(results["context"]):
-        assert item["id"] == f"id_{i}"
-        assert item["text"] == f"doc_{i}"
-        assert item["metadata"] == {"meta": i}
-        assert item["distance"] == float(i)
-    assert "answer" in results
+    assert isinstance(results, QueryResult)
+    assert hasattr(results, "answer") and hasattr(results, "context")
+    assert isinstance(results.context, list)
+    assert len(results.context) == 3
+    for i, item in enumerate(results.context):
+        assert item.id == f"id_{i}"
+        assert item.text == f"doc_{i}"
+        assert item.metadata == {"meta": i}
+        assert item.distance == float(i)
+    assert hasattr(results, "answer")
 
 def test_query_empty():
     class EmptyVectorStore(DummyVectorStore):
@@ -39,10 +39,10 @@ def test_query_empty():
             return {"ids": [], "documents": [], "metadatas": [], "distances": []}
     engine = QueryEngine(embedder=DummyEmbedder(), vector_store=EmptyVectorStore())
     results = engine.query("", n_results=5)
-    assert isinstance(results, dict)
-    assert "context" in results
-    assert results["context"] == []
-    assert "answer" in results
+    assert isinstance(results, QueryResult)
+    assert hasattr(results, "answer") and hasattr(results, "context")
+    assert results.context == []
+    assert hasattr(results, "answer")
 
 def test_query_handles_missing_fields():
     class PartialVectorStore(DummyVectorStore):
@@ -50,10 +50,10 @@ def test_query_handles_missing_fields():
             return {"ids": ["a", "b"]}  # missing other fields
     engine = QueryEngine(embedder=DummyEmbedder(), vector_store=PartialVectorStore())
     results = engine.query("foo", n_results=2)
-    assert isinstance(results, dict)
-    assert "context" in results
-    context = results["context"]
-    assert all(item["text"] is None for item in context)
-    assert "answer" in results
-    assert all(item["metadata"] is None for item in context)
-    assert all(item["distance"] is None for item in context)
+    assert isinstance(results, QueryResult)
+    assert hasattr(results, "answer") and hasattr(results, "context")
+    context = results.context
+    assert all(item.text is None for item in context)
+    assert all(item.metadata is None for item in context)
+    assert all(item.distance is None for item in context)
+    assert hasattr(results, "answer")
