@@ -4,6 +4,7 @@ from pydantic import BaseModel
 from typing import List, Optional
 from indexer import Indexer, IndexerMetrics
 from fastapi.encoders import jsonable_encoder
+from query_engine import QueryEngine
 import traceback
 
 app = FastAPI()
@@ -36,5 +37,12 @@ class QueryRequest(BaseModel):
 
 @app.post("/api/v1/query")
 def query_endpoint(request: QueryRequest):
-    # Placeholder implementation
-    return JSONResponse(content={"message": f"Query received: {request.query}"})
+    try:
+        engine = QueryEngine()
+        formatted = engine.query(request.query, n_results=5)
+        return JSONResponse(content={"results": formatted})
+    except Exception as e:
+        return JSONResponse(status_code=500, content={
+            "error": str(e),
+            "traceback": traceback.format_exc()
+        })
