@@ -22,6 +22,13 @@ def test_chunk_by_paragraph():
     chunks = chunker.chunk_text(text)
     assert chunks == ["Para1.", "Para2 is a bit longer.", "Para3."]
 
+# Chunking with split_on (paragraph) by default
+def test_chunk_by_paragraph():
+    chunker = Chunker(chunk_size=100)
+    text = "Para1.\n\nPara2 is a bit longer.\n\nPara3."
+    chunks = chunker.chunk_text(text)
+    assert chunks == ["Para1.", "Para2 is a bit longer.", "Para3."]
+
 # Chunking with split_on and long paragraph
 def test_chunk_long_paragraph():
     chunker = Chunker(chunk_size=5, split_on=r"\n\n")

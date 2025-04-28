@@ -1,5 +1,6 @@
 {
     "cSpell.words": [
+        "chunker",
         "Embedder",
         "fastapi",
         "uvicorn",
