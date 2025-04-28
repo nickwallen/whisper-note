@@ -1,7 +1,10 @@
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
-import os
+from typing import List, Optional
+from indexer import Indexer, IndexerMetrics
+from fastapi.encoders import jsonable_encoder
+import traceback
 
 app = FastAPI()
 
@@ -9,14 +12,10 @@ app = FastAPI()
 def health_check():
     return JSONResponse(content={"status": "ok"})
 
-from typing import List, Optional
-
 class IndexRequest(BaseModel):
     directory: str
     file_extensions: Optional[List[str]] = None  # Example: [".txt", ".md"]
 
-from indexer import Indexer, IndexerMetrics
-from fastapi.encoders import jsonable_encoder
 
 @app.post("/api/v1/index")
 def index_directory(request: IndexRequest):
@@ -25,11 +24,17 @@ def index_directory(request: IndexRequest):
     try:
         indexer = Indexer()
         metrics: IndexerMetrics = indexer.index_directory(directory, file_extensions=file_extensions)
-        metrics_dict = jsonable_encoder(metrics)
-        return JSONResponse(content=metrics_dict)
+        return JSONResponse(content=jsonable_encoder(metrics))
     except Exception as e:
-        import traceback
         return JSONResponse(status_code=500, content={
             "error": str(e),
             "traceback": traceback.format_exc()
         })
+
+class QueryRequest(BaseModel):
+    query: str
+
+@app.post("/api/v1/query")
+def query_endpoint(request: QueryRequest):
+    # Placeholder implementation
+    return JSONResponse(content={"message": f"Query received: {request.query}"})

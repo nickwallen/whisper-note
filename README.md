@@ -8,6 +8,29 @@ Use Cases:
 * Summarize the work that I completed this week?
 * What updates should I provide for stand-up?
 
+## Usage
+
+### Index
+
+```
+curl -s -X POST "http://localhost:8000/api/v1/index" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "directory": "/Users/nick.allen/Dropbox/Documents/Obsidian Vaults",
+    "file_extensions": [".txt", ".md"]
+  }' | jq
+```
+
+### Query
+
+```
+curl -s -X POST "http://localhost:8000/api/v1/query" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "query": "What updates should I provide for stand-up?"
+  }' | jq
+```
+
 ## Plan
 
 ### Index
