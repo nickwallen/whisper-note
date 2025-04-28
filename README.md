@@ -35,25 +35,18 @@ curl -s -X POST "http://localhost:8000/api/v1/query" \
 
 ### Index
 
-Read from a directory of markdown or text files
-
-Chunk the content from the files no larger than X
-
-Add additional metadata like create/modified time and file name
-
-Create embeddings for each chunk
-
-Store embeddings in a simple local vector store (like ChromaDB)
+1. Read from a directory of markdown or text
+2. Chunk the file content
+3. Add additional metadata like create/modified time and file name
+4. Create embeddings for each chunk
+5. Store embeddings in a simple local vector store (like ChromaDB)
 
 ### Query
 
-created embeddings for the question
-
-find the most similar chunks
-
-sending the most similar chunks to a language model along with the query
-
-get the response from the language model
+1. Create embeddings for the query
+2. Find the most similar chunks
+3. Send the most similar chunks to a language model along with the query
+4. Get the response from the language model
 
 
 
