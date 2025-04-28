@@ -39,6 +39,14 @@ def test_indexer_basic(temp_dir_with_files):
     assert metrics.file_count == 3
     assert metrics.chunk_count == 7  # 2 in a.txt, 3 in b.txt, 2 in c.txt
     assert metrics.extensions_indexed == {".txt"}
+    # Check that all chunks have modification_time metadata
+    for file in ["a.txt", "b.txt", "subdir/c.txt"]:
+        results = indexer.vector_store.collection.get(where={"file": file})
+        for md in results["metadatas"]:
+            assert "modification_time" in md
+            # Check ISO format (YYYY-MM-DDTHH:MM:SS...)
+            import re
+            assert re.match(r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}", md["modification_time"])
 
 def test_indexer_skips_unchanged_file():
     import tempfile, shutil

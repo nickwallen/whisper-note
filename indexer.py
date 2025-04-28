@@ -58,9 +58,18 @@ class Indexer:
             embeddings = self.embedder.embed(chunks) if chunks else []
             ids = []
             metadatas = []
+            from datetime import datetime
+            mod_time = os.path.getmtime(file_path)
+            mod_time_iso = datetime.fromtimestamp(mod_time).isoformat()
             for i, chunk in enumerate(chunks):
                 ids.append(f"{file_hash}::chunk{i}")
-                metadatas.append({"file": rel_path, "file_hash": file_hash, "chunk_index": i, "text": chunk})
+                metadatas.append({
+                    "file": rel_path,
+                    "file_hash": file_hash,
+                    "chunk_index": i,
+                    "text": chunk,
+                    "modification_time": mod_time_iso,
+                })
             if ids:
                 self.vector_store.add(ids, embeddings, metadatas)
                 chunk_count += len(ids)
