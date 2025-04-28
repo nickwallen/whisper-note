@@ -70,3 +70,8 @@ make ollama
 
 This will run `ollama serve` in the foreground. You can then query local LLMs from the API.
 
+If you see a message about the model not being pulled, run:
+
+```sh
+ollama pull llama2
+```
