@@ -24,7 +24,7 @@ def index_directory(request: IndexRequest):
     file_extensions = request.file_extensions
     try:
         indexer = Indexer()
-        metrics: IndexerMetrics = indexer.index_dir(directory, file_exts=file_extensions)
+        metrics = indexer.index_dir(directory, file_exts=file_extensions)
         return JSONResponse(content=jsonable_encoder(metrics))
     except Exception as e:
         return JSONResponse(status_code=500, content={

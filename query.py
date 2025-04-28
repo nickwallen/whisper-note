@@ -1,6 +1,20 @@
 import requests
+from dataclasses import dataclass
+from typing import List, Any, Optional
 from embeddings import Embedder
 from vector_store import VectorStore
+
+@dataclass
+class ContextChunk:
+    id: str
+    text: Optional[str]
+    metadata: Optional[Any]
+    distance: Optional[float]
+
+@dataclass
+class QueryResult:
+    answer: str
+    context: List[ContextChunk]
 
 class QueryEngine:
     def __init__(self, embedder=None, vector_store=None, ollama_url="http://localhost:11434", ollama_model="llama2"):
@@ -9,29 +23,29 @@ class QueryEngine:
         self.ollama_url = ollama_url
         self.ollama_model = ollama_model
 
-    def query(self, query_string, n_results=5, prompt_template=None):
+    def query(self, query_string, n_results=5, prompt_template=None) -> QueryResult:
         """
         Retrieve top matching chunks and use Ollama to answer the query using those chunks as context.
-        Returns a dict with the answer and the context used.
+        Returns a QueryResult with the answer and the context used.
         """
         # Retrieve context chunks
         query_embedding = self.embedder.embed([query_string])[0]
         results = self.vector_store.query(query_embedding, n_results=n_results)
         context_chunks = []
         for i in range(len(results["ids"])):
-            item = {
-                "id": results["ids"][i],
-                "text": results["documents"][i] if "documents" in results else None,
-                "metadata": results["metadatas"][i] if "metadatas" in results else None,
-                "distance": results["distances"][i] if "distances" in results else None,
-            }
-            context_chunks.append(item)
+            chunk = ContextChunk(
+                id=results["ids"][i],
+                text=results["documents"][i] if "documents" in results else None,
+                metadata=results["metadatas"][i] if "metadatas" in results else None,
+                distance=results["distances"][i] if "distances" in results else None,
+            )
+            context_chunks.append(chunk)
         # Compose context string, ensuring all items are strings
         def ensure_str(x):
             if isinstance(x, list):
                 return "\n".join(str(i) for i in x)
             return str(x)
-        context_texts = [ensure_str(chunk["text"]) for chunk in context_chunks if chunk["text"]]
+        context_texts = [ensure_str(chunk.text) for chunk in context_chunks if chunk.text]
         context = "\n".join(context_texts)
         if not prompt_template:
             prompt_template = (
@@ -68,4 +82,5 @@ class QueryEngine:
                 answer = f"Ollama API error: {e}"
         except Exception as e:
             answer = f"Error communicating with Ollama: {e}"
-        return {"answer": answer.strip(), "context": context_chunks}
+        return QueryResult(answer=answer.strip(), context=context_chunks)
+

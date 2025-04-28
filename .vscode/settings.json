@@ -3,6 +3,7 @@
         "chunker",
         "Embedder",
         "fastapi",
+        "jsonable",
         "metadatas",
         "uvicorn",
         "VENV"
