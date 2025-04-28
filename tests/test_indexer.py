@@ -38,7 +38,6 @@ def test_indexer_basic(temp_dir_with_files):
     metrics = indexer.index_directory(temp_dir_with_files, file_extensions=[".txt"])
     assert metrics.file_count == 3
     assert metrics.chunk_count == 7  # 2 in a.txt, 3 in b.txt, 2 in c.txt
-    assert metrics.empty_files == []
     assert metrics.extensions_indexed == {".txt"}
 
 def test_indexer_skips_unchanged_file():
@@ -71,7 +70,6 @@ def test_indexer_empty_dir():
     metrics = indexer.index_directory(temp_dir, file_extensions=[".txt"])
     assert metrics.file_count == 0
     assert metrics.chunk_count == 0
-    assert metrics.empty_files == []
     assert metrics.extensions_indexed == set()
     shutil.rmtree(temp_dir)
 
@@ -80,7 +78,6 @@ def test_indexer_non_matching_extensions(temp_dir_with_files):
     metrics = indexer.index_directory(temp_dir_with_files, file_extensions=[".md"])  # No .md files
     assert metrics.file_count == 0
     assert metrics.chunk_count == 0
-    assert metrics.empty_files == []
     assert metrics.extensions_indexed == set()
 
 def test_indexer_file_no_extension():
@@ -93,7 +90,6 @@ def test_indexer_file_no_extension():
     metrics = indexer.index_directory(temp_dir)
     assert metrics.file_count == 1
     assert metrics.chunk_count == 2
-    assert metrics.empty_files == []
     assert metrics.extensions_indexed == set()
     shutil.rmtree(temp_dir)
 
@@ -107,7 +103,6 @@ def test_indexer_file_whitespace_only():
     metrics = indexer.index_directory(temp_dir, file_extensions=[".txt"])
     assert metrics.file_count == 1
     assert metrics.chunk_count == 0
-    assert metrics.empty_files == ["whitespace.txt"]
     assert metrics.extensions_indexed == {".txt"}
     shutil.rmtree(temp_dir)
 
@@ -121,7 +116,6 @@ def test_indexer_file_empty():
     metrics = indexer.index_directory(temp_dir, file_extensions=[".txt"])
     assert metrics.file_count == 1
     assert metrics.chunk_count == 0
-    assert metrics.empty_files == ["empty.txt"]
     assert metrics.extensions_indexed == {".txt"}
     shutil.rmtree(temp_dir)
 
@@ -135,6 +129,5 @@ def test_indexer_file_non_txt_extension():
     metrics = indexer.index_directory(temp_dir, file_extensions=[".md"])
     assert metrics.file_count == 1
     assert metrics.chunk_count == 2
-    assert metrics.empty_files == []
     assert metrics.extensions_indexed == {".md"}
     shutil.rmtree(temp_dir)

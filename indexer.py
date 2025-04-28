@@ -10,7 +10,6 @@ import hashlib
 class IndexerMetrics:
     file_count: int
     chunk_count: int
-    empty_files: List[str] = field(default_factory=list)
     extensions_indexed: Set[str] = field(default_factory=set)
     failed_files: List[dict] = field(default_factory=list)  # List of {"file": ..., "error": ...}
 
@@ -31,7 +30,6 @@ class Indexer:
         """
         files = self._find_files(directory, file_extensions)
         chunk_count = 0
-        empty_files = []
         extensions_indexed = set()
         failed_files = []
         for file_path in files:
@@ -66,12 +64,9 @@ class Indexer:
             if ids:
                 self.vector_store.add(ids, embeddings, metadatas)
                 chunk_count += len(ids)
-            else:
-                empty_files.append(rel_path)
         return IndexerMetrics(
             file_count=len(files),
             chunk_count=chunk_count,
-            empty_files=empty_files,
             extensions_indexed=extensions_indexed,
             failed_files=failed_files,
         )
