@@ -1,5 +1,6 @@
 from typing import List, Optional
 import re
+import logging
 
 
 class Chunker:
@@ -11,7 +12,7 @@ class Chunker:
     """
 
     def __init__(
-        self, chunk_size: int = 512, overlap: int = 0, split_on: Optional[str] = r"\n\n"
+        self, chunk_size: int = 512, overlap: int = 0, split_on: Optional[str] = r""
     ):
         """
         chunk_size: number of characters per chunk (default)
@@ -21,6 +22,8 @@ class Chunker:
         self.chunk_size = chunk_size
         self.overlap = overlap
         self.split_on = split_on
+        self.logger = logging.getLogger(__name__)
+        self.logger.debug(f"Initialized Chunker with chunk_size={chunk_size}, overlap={overlap}, split_on={split_on}")
 
     def chunk_file(self, file_path: str) -> List[str]:
         try:
@@ -49,6 +52,7 @@ class Chunker:
             end = min(start + self.chunk_size, len(text))
             chunk = text[start:end]
             if chunk.strip():
+                self.logger.debug(f"Created chunk: {chunk}")
                 chunks.append(chunk)
             start += (
                 self.chunk_size - self.overlap
