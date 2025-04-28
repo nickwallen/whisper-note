@@ -3,6 +3,7 @@
         "chunker",
         "Embedder",
         "fastapi",
+        "metadatas",
         "uvicorn",
         "VENV"
     ]
