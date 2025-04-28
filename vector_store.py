@@ -11,8 +11,14 @@ class VectorStore:
         """
         Delete all vectors whose metadata['file'] matches rel_path.
         """
-        # ChromaDB delete API allows filtering by metadata
         self.collection.delete(where={"file": rel_path})
+
+    def is_file_hash_indexed(self, rel_path: str, file_hash: str) -> bool:
+        """
+        Return True if any vector with metadata['file'] == rel_path and metadata['file_hash'] == file_hash exists.
+        """
+        results = self.collection.get(where={"$and": [{"file": rel_path}, {"file_hash": file_hash}]})
+        return len(results["ids"]) > 0
 
     def add(self, ids: List[str], embeddings: List[List[float]], metadatas: Optional[List[Dict]] = None):
         """

@@ -41,6 +41,30 @@ def test_indexer_basic(temp_dir_with_files):
     assert metrics.empty_files == []
     assert metrics.extensions_indexed == {".txt"}
 
+def test_indexer_skips_unchanged_file():
+    import tempfile, shutil
+    temp_dir = tempfile.mkdtemp()
+    file_path = os.path.join(temp_dir, "foo.txt")
+    with open(file_path, "w") as f:
+        f.write("alpha\nbeta\n")
+    indexer = Indexer(embedder=DummyEmbedder(), chunker=DummyChunker(), vector_store=VectorStore(collection_name="skip_test"))
+    # First index
+    metrics1 = indexer.index_directory(temp_dir, file_extensions=[".txt"])
+    # Get vector count after first index
+    count1 = len(indexer.vector_store.collection.get(where={"file": "foo.txt"})["ids"])
+    # Second index (should skip, as file unchanged)
+    metrics2 = indexer.index_directory(temp_dir, file_extensions=[".txt"])
+    count2 = len(indexer.vector_store.collection.get(where={"file": "foo.txt"})["ids"])
+    assert count1 == 2
+    assert count2 == 2  # Should not increase
+    # Now change the file
+    with open(file_path, "w") as f:
+        f.write("gamma\ndelta\n")
+    metrics3 = indexer.index_directory(temp_dir, file_extensions=[".txt"])
+    count3 = len(indexer.vector_store.collection.get(where={"file": "foo.txt"})["ids"])
+    assert count3 == 2  # Still two, but new content
+    shutil.rmtree(temp_dir)
+
 def test_indexer_empty_dir():
     temp_dir = tempfile.mkdtemp()
     indexer = Indexer(embedder=DummyEmbedder(), chunker=DummyChunker(), vector_store=VectorStore(collection_name="test_indexer_empty"))

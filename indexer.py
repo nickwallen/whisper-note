@@ -47,6 +47,9 @@ class Indexer:
             except Exception as e:
                 failed_files.append({"file": rel_path, "error": f"Hash error: {str(e)}"})
                 continue
+            # Skip if this file version is already indexed
+            if self.vector_store.is_file_hash_indexed(rel_path, file_hash):
+                continue
             # Clean up old vectors for this file path
             self.vector_store.delete_by_file_path(rel_path)
             try:
