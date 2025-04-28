@@ -49,4 +49,24 @@ curl -s -X POST "http://localhost:8000/api/v1/query" \
 4. Get the response from the language model
 
 
+## Ollama Installation
+
+Ollama is required for running local language models (LLMs) privately on your machine. You can install it using one of the following methods:
+
+### Homebrew (recommended on macOS)
+```sh
+brew install ollama
+```
+
+### Official Install Script (any Unix)
+```sh
+curl -fsSL https://ollama.com/install.sh | sh
+```
+
+After installation, you can start the Ollama service using the Makefile:
+```sh
+make ollama
+```
+
+This will run `ollama serve` in the foreground. You can then query local LLMs from the API.
 

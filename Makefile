@@ -12,4 +12,7 @@ run:
 test:
 	$(VENV)/bin/pytest
 
-.PHONY: install run test
+ollama:
+	ollama serve
+
+.PHONY: install run test ollama
