@@ -34,17 +34,17 @@ class QueryEngine:
         self.ollama_url = ollama_url
         self.ollama_model = ollama_model
 
-    def query(self, query_string, n_results=5, prompt_template=None) -> QueryResult:
+    def query(self, query_string, n_results=10, prompt_template=None) -> QueryResult:
         """
         Retrieve top matching chunks and use Ollama to answer the query using those chunks as context.
         Returns a QueryResult with the answer and the context used.
         """
         context = self._find_similar_context(query_string, max_results=n_results)
         prompt = self._build_prompt(query_string, context, prompt_template)
-        answer = self.query_lang_model(prompt)
+        answer = self.ask_lang_model(prompt)
         return QueryResult(answer=answer, context=context)
 
-    def query_lang_model(self, prompt: str) -> str:
+    def ask_lang_model(self, prompt: str) -> str:
         try:
             response = requests.post(
                 f"{self.ollama_url}/api/chat",
@@ -101,6 +101,9 @@ class QueryEngine:
     ) -> List[ContextChunk]:
         query_embedding = self.embedder.embed([query])[0]
         results = self.vector_store.query(query_embedding, n_results=max_results)
+        logger = logging.getLogger(__name__)
+        logger.debug(f"ChromaDB raw results: {results}")
+
         similar_context = []
         for i in range(len(results["ids"])):
             chunk = ContextChunk(
@@ -113,7 +116,7 @@ class QueryEngine:
 
         logger = logging.getLogger(__name__)
         logger.debug(
-            f"Found {len(similar_context)} similar context chunks for query: {query}"
+            f"Found {len(similar_context)} similar context chunks: {similar_context}"
         )
         return similar_context
 

@@ -49,7 +49,7 @@ class QueryRequest(BaseModel):
 def query_endpoint(request: QueryRequest):
     try:
         engine = QueryEngine()
-        result = engine.query(request.query, n_results=5)
+        result = engine.query(request.query, n_results=10)
         return JSONResponse(content={"results": jsonable_encoder(result)})
     except Exception as e:
         return JSONResponse(

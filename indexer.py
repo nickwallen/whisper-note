@@ -88,7 +88,7 @@ class Indexer:
                     self._create_metadata(file_path, file_hash, i, chunk, mod_time_iso)
                 )
             if ids:
-                self.vector_store.add(ids, embeddings, metadatas)
+                self.vector_store.add(ids, embeddings, chunks, metadatas)
             return IndexerMetrics(file_count=1, chunk_count=len(ids))
         except Exception as e:
             return IndexerMetrics(
