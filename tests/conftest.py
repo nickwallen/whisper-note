@@ -4,6 +4,7 @@ from lang_model import OLLAMA_URL_ENV, OLLAMA_MODEL_ENV
 import os
 import tempfile
 
+
 @pytest.fixture(scope="session")
 def ollama_container(model="llama2:7b"):
     # Uses a persistent temp directory for caching models

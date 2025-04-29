@@ -1,6 +1,7 @@
 import pytest
 from lang_model import OllamaLangModel
 
+
 @pytest.mark.integration
 def test_ollama_lang_model_hello(ollama_container):
     lang_model = OllamaLangModel()

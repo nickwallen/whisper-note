@@ -18,7 +18,9 @@ def index(
     directory: Path = typer.Argument(
         ..., exists=True, file_okay=False, dir_okay=True, help="Directory to index."
     ),
-    file_extensions: List[str] = typer.Option([".txt", ".md"], help="File extensions to include."),
+    file_extensions: List[str] = typer.Option(
+        [".txt", ".md"], help="File extensions to include."
+    ),
 ):
     """Index a directory with specified file extensions."""
     try:
