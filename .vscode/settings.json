@@ -5,7 +5,14 @@
         "fastapi",
         "jsonable",
         "metadatas",
+        "OLLAMA",
+        "pytest",
         "uvicorn",
         "VENV"
-    ]
+    ],
+    "python.testing.pytestArgs": [
+        "tests"
+    ],
+    "python.testing.unittestEnabled": false,
+    "python.testing.pytestEnabled": true
 }

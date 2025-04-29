@@ -5,6 +5,9 @@ from embeddings import Embedder
 from vector_store import VectorStore
 import json
 import logging
+import os
+
+OLLAMA_URL_ENV = "OLLAMA_URL"
 
 
 @dataclass
@@ -22,16 +25,10 @@ class QueryResult:
 
 
 class QueryEngine:
-    def __init__(
-        self,
-        embedder=None,
-        vector_store=None,
-        ollama_url="http://localhost:11434",
-        ollama_model="llama2",
-    ):
+    def __init__(self, embedder=None, vector_store=None, ollama_model="llama2"):
         self.embedder = embedder or Embedder()
         self.vector_store = vector_store or VectorStore()
-        self.ollama_url = ollama_url
+        self.ollama_url = os.environ.get(OLLAMA_URL_ENV, "http://localhost:11434")
         self.ollama_model = ollama_model
 
     def query(self, query_string, n_results=10, prompt_template=None) -> QueryResult:
