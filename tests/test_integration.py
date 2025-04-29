@@ -1,8 +1,7 @@
 import os
 import tempfile
-import shutil
 from fastapi.testclient import TestClient
-from main import app
+from api import app
 import pytest
 import logging
 
