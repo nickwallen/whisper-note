@@ -2,8 +2,11 @@ import chromadb
 from chromadb.config import Settings
 from typing import List, Dict, Optional
 
+
 class VectorStore:
-    def __init__(self, collection_name: str = "notes", persist_directory: str = "./chroma_db"):
+    def __init__(
+        self, collection_name: str = "notes", persist_directory: str = "./chroma_db"
+    ):
         self.client = chromadb.Client(Settings(persist_directory=persist_directory))
         self.collection = self.client.get_or_create_collection(collection_name)
 
@@ -17,10 +20,18 @@ class VectorStore:
         """
         Return True if any vector with metadata['file'] == rel_path and metadata['file_hash'] == file_hash exists.
         """
-        results = self.collection.get(where={"$and": [{"file": rel_path}, {"file_hash": file_hash}]})
+        results = self.collection.get(
+            where={"$and": [{"file": rel_path}, {"file_hash": file_hash}]}
+        )
         return len(results["ids"]) > 0
 
-    def add(self, ids: List[str], embeddings: List[List[float]], documents: List[str], metadatas: Optional[List[Dict]] = None):
+    def add(
+        self,
+        ids: List[str],
+        embeddings: List[List[float]],
+        documents: List[str],
+        metadatas: Optional[List[Dict]] = None,
+    ):
         """
         Add embeddings to the vector store.
         ids: List of unique string IDs
@@ -28,10 +39,13 @@ class VectorStore:
         documents: List of chunk texts (same length as ids)
         metadatas: List of metadata dicts (same length as ids, optional)
         """
-        self.collection.add(ids=ids, embeddings=embeddings, documents=documents, metadatas=metadatas)
+        self.collection.add(
+            ids=ids, embeddings=embeddings, documents=documents, metadatas=metadatas
+        )
 
-
-    def query(self, embedding: List[float], n_results: int = 10) -> chromadb.QueryResult:
+    def query(
+        self, embedding: List[float], n_results: int = 10
+    ) -> chromadb.QueryResult:
         """
         Query the vector store for the most similar embeddings.
         embedding: The query embedding vector
@@ -40,8 +54,9 @@ class VectorStore:
         return self.collection.query(
             query_embeddings=[embedding],
             n_results=n_results,
-            include=["documents", "metadatas", "distances"]
+            include=["documents", "metadatas", "distances"],
         )
+
 
 # Example usage:
 # store = VectorStore()

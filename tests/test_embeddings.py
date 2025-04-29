@@ -1,10 +1,12 @@
 import pytest
 from embeddings import Embedder
 
+
 @pytest.fixture(scope="module")
 def embedder():
     # Use module scope to avoid repeated model loading
     return Embedder()
+
 
 def test_embed_one_returns_vector(embedder):
     text = "Hello world!"
@@ -12,6 +14,7 @@ def test_embed_one_returns_vector(embedder):
     assert isinstance(vec, list)
     assert all(isinstance(x, float) for x in vec)
     assert len(vec) > 0
+
 
 def test_embed_returns_vectors(embedder):
     texts = ["First text", "Second text"]
@@ -24,10 +27,12 @@ def test_embed_returns_vectors(embedder):
     lengths = set(len(v) for v in vecs)
     assert len(lengths) == 1
 
+
 def test_embed_empty_list(embedder):
     vecs = embedder.embed([])
     assert isinstance(vecs, list)
     assert vecs == []
+
 
 def test_embed_one_and_embed_match(embedder):
     text = "Test string"

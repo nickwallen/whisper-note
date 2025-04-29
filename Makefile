@@ -13,6 +13,9 @@ install-dev:
 run: 
 	$(UVICORN) main:app --reload --port 8000
 
+format:
+	black .
+
 test:
 	$(VENV)/bin/pytest
 
@@ -25,4 +28,5 @@ test-integration:
 ollama:
 	ollama serve
 
-.PHONY: install run test ollama
+.PHONY: install run test ollama format
+

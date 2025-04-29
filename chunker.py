@@ -23,7 +23,9 @@ class Chunker:
         self.overlap = overlap
         self.split_on = split_on
         self.logger = logging.getLogger(__name__)
-        self.logger.debug(f"Initialized Chunker with chunk_size={chunk_size}, overlap={overlap}, split_on={split_on}")
+        self.logger.debug(
+            f"Initialized Chunker with chunk_size={chunk_size}, overlap={overlap}, split_on={split_on}"
+        )
 
     def chunk_file(self, file_path: str) -> List[str]:
         try:

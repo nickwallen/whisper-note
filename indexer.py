@@ -63,7 +63,6 @@ class Indexer:
 
         return metrics
 
-
     def index_file(self, file_path) -> IndexerMetrics:
         """
         Index a single file. Returns IndexerMetrics for this file.

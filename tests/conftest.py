@@ -5,7 +5,7 @@ import os
 
 
 @pytest.fixture(scope="session")
-def ollama_container(model = "llama2:7b"):
+def ollama_container(model="llama2:7b"):
     with OllamaContainer() as ollama:
         ollama.pull_model(model)
         endpoint = ollama.get_endpoint()
