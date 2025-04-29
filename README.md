@@ -10,7 +10,25 @@ Use Cases:
 
 ## Usage
 
-### Index
+### Start
+
+```
+make ollama
+```
+```
+make run
+```
+
+### CLI
+
+```
+python cli.py index <directory>
+python cli.py query <question>
+```
+
+### Daemon
+
+#### Index
 
 ```
 curl -s -X POST "http://localhost:8000/api/v1/index" \
