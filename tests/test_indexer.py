@@ -61,8 +61,6 @@ def test_indexer_basic(temp_dir_with_files):
 
 
 def test_indexer_skips_unchanged_file():
-    import tempfile, shutil
-
     temp_dir = tempfile.mkdtemp()
     file_path = os.path.join(temp_dir, "foo.txt")
     with open(file_path, "w") as f:
