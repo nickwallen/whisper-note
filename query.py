@@ -8,6 +8,7 @@ import logging
 import os
 
 OLLAMA_URL_ENV = "OLLAMA_URL"
+OLLAMA_MODEL_ENV = "OLLAMA_MODEL"
 
 
 @dataclass
@@ -25,11 +26,11 @@ class QueryResult:
 
 
 class QueryEngine:
-    def __init__(self, embedder=None, vector_store=None, ollama_model="llama2"):
+    def __init__(self, embedder=None, vector_store=None, ollama_model=None):
         self.embedder = embedder or Embedder()
         self.vector_store = vector_store or VectorStore()
         self.ollama_url = os.environ.get(OLLAMA_URL_ENV, "http://localhost:11434")
-        self.ollama_model = ollama_model
+        self.ollama_model = os.environ.get(OLLAMA_MODEL_ENV, "llama2")
 
     def query(self, query_string, n_results=10, prompt_template=None) -> QueryResult:
         """
@@ -63,12 +64,7 @@ class QueryEngine:
                     if "message" in data and "content" in data["message"]:
                         answer += data["message"]["content"]
         except requests.exceptions.HTTPError as e:
-            if response.status_code == 404:
-                answer = "Ollama API endpoint not found. Is the Ollama server running and is the model pulled?"
-            else:
-                answer = f"Ollama API error: {e}"
-        except Exception as e:
-            answer = f"Error communicating with Ollama: {e}"
+            answer = f"Ollama API responded with {response.status_code}: {response.text}: {e}"
         return answer.strip()
 
     def _build_prompt(

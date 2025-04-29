@@ -7,6 +7,7 @@
         "metadatas",
         "OLLAMA",
         "pytest",
+        "testcontainers",
         "uvicorn",
         "VENV"
     ],

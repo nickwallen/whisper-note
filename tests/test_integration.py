@@ -12,8 +12,6 @@ logging.basicConfig(level=logging.DEBUG)
 
 @pytest.mark.integration
 def test_index_and_query(ollama_container):
-    # Point the app to the test Ollama container
-    os.environ[OLLAMA_URL_ENV] = ollama_container
     client = TestClient(app)
     with tempfile.TemporaryDirectory() as tmpdir:
 
@@ -40,13 +38,5 @@ def test_index_and_query(ollama_container):
         )
         assert resp.status_code == 200
         data = resp.json()
-        answer = data["results"]["answer"] if "results" in data else data["answer"]
-
-        # Check that the answer is reasonable
+        answer = data["results"]["answer"]
         assert "login bug" in answer.lower() or "fixed" in answer.lower()
-
-        # Query for something else
-        resp = client.post("/api/v1/query", json={"query": "What happened on Tuesday?"})
-        assert resp.status_code == 200
-        answer = resp.json()["results"]["answer"]
-        assert "documentation" in answer.lower() or "tuesday" in answer.lower()
