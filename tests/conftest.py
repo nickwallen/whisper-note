@@ -1,6 +1,6 @@
 import pytest
 from testcontainers.ollama import OllamaContainer
-from query import OLLAMA_URL_ENV, OLLAMA_MODEL_ENV
+from lang_model import OLLAMA_URL_ENV, OLLAMA_MODEL_ENV
 import os
 
 

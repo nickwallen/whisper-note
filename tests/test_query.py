@@ -1,5 +1,6 @@
 import pytest
 from query import QueryEngine, QueryResult, ContextChunk
+from lang_model import LangModel
 
 
 class DummyEmbedder:
@@ -23,11 +24,20 @@ class DummyVectorStore:
         }
 
 
+class DummyLangModel(LangModel):
+    def generate(self, prompt: str) -> str:
+        return "dummy answer"
+
+
 def test_query_basic():
-    engine = QueryEngine(embedder=DummyEmbedder(), vector_store=DummyVectorStore())
+    engine = QueryEngine(
+        embedder=DummyEmbedder(),
+        vector_store=DummyVectorStore(),
+        lang_model=DummyLangModel(),
+    )
     actual = engine.query("test", n_results=3)
     expected = QueryResult(
-        answer=actual.answer,  # Accept whatever answer the engine generates
+        answer="dummy answer",
         context=[
             ContextChunk(id="id_0", text="doc_0", metadata={"meta": 0}, distance=0.0),
             ContextChunk(id="id_1", text="doc_1", metadata={"meta": 1}, distance=1.0),
@@ -43,11 +53,13 @@ def test_query_empty():
         def query(self, embedding, n_results=5):
             return {"ids": [], "documents": [], "metadatas": [], "distances": []}
 
-    engine = QueryEngine(embedder=DummyEmbedder(), vector_store=EmptyVectorStore())
-    actual = engine.query("", n_results=5)
-    expected = QueryResult(
-        answer=actual.answer, context=[]  # Accept whatever answer the engine generates
+    engine = QueryEngine(
+        embedder=DummyEmbedder(),
+        vector_store=EmptyVectorStore(),
+        lang_model=DummyLangModel(),
     )
+    actual = engine.query("", n_results=5)
+    expected = QueryResult(answer="dummy answer", context=[])
     assert actual == expected
     assert actual.answer
 
@@ -57,10 +69,14 @@ def test_query_handles_missing_fields():
         def query(self, embedding, n_results=2):
             return {"ids": ["a", "b"]}  # missing other fields
 
-    engine = QueryEngine(embedder=DummyEmbedder(), vector_store=PartialVectorStore())
+    engine = QueryEngine(
+        embedder=DummyEmbedder(),
+        vector_store=PartialVectorStore(),
+        lang_model=DummyLangModel(),
+    )
     actual = engine.query("foo", n_results=2)
     expected = QueryResult(
-        answer=actual.answer,  # Accept whatever answer the engine generates
+        answer="dummy answer",
         context=[
             ContextChunk(id="a", text=None, metadata=None, distance=None),
             ContextChunk(id="b", text=None, metadata=None, distance=None),

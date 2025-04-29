@@ -6,9 +6,7 @@ from vector_store import VectorStore
 import json
 import logging
 import os
-
-OLLAMA_URL_ENV = "OLLAMA_URL"
-OLLAMA_MODEL_ENV = "OLLAMA_MODEL"
+from lang_model import LangModel, OllamaLangModel
 
 
 @dataclass
@@ -26,46 +24,20 @@ class QueryResult:
 
 
 class QueryEngine:
-    def __init__(self, embedder=None, vector_store=None, ollama_model=None):
+    def __init__(self, embedder=None, vector_store=None, lang_model: LangModel = None):
         self.embedder = embedder or Embedder()
         self.vector_store = vector_store or VectorStore()
-        self.ollama_url = os.environ.get(OLLAMA_URL_ENV, "http://localhost:11434")
-        self.ollama_model = os.environ.get(OLLAMA_MODEL_ENV, "llama2")
+        self.lang_model = lang_model or OllamaLangModel()
 
     def query(self, query_string, n_results=10, prompt_template=None) -> QueryResult:
         """
-        Retrieve top matching chunks and use Ollama to answer the query using those chunks as context.
+        Retrieve top matching chunks and use LangModel to answer the query using those chunks as context.
         Returns a QueryResult with the answer and the context used.
         """
         context = self._find_similar_context(query_string, max_results=n_results)
         prompt = self._build_prompt(query_string, context, prompt_template)
-        answer = self.ask_lang_model(prompt)
+        answer = self.lang_model.generate(prompt)
         return QueryResult(answer=answer, context=context)
-
-    def ask_lang_model(self, prompt: str) -> str:
-        try:
-            response = requests.post(
-                f"{self.ollama_url}/api/chat",
-                json={
-                    "model": self.ollama_model,
-                    "messages": [
-                        {"role": "system", "content": "You are a helpful assistant."},
-                        {"role": "user", "content": prompt},
-                    ],
-                },
-                timeout=60,
-                stream=True,
-            )
-            response.raise_for_status()
-            answer = ""
-            for line in response.iter_lines():
-                if line:
-                    data = json.loads(line.decode("utf-8"))
-                    if "message" in data and "content" in data["message"]:
-                        answer += data["message"]["content"]
-        except requests.exceptions.HTTPError as e:
-            answer = f"Ollama API responded with {response.status_code}: {response.text}: {e}"
-        return answer.strip()
 
     def _build_prompt(
         self,

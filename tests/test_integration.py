@@ -4,7 +4,6 @@ import shutil
 from fastapi.testclient import TestClient
 from main import app
 import pytest
-from query import OLLAMA_URL_ENV
 import logging
 
 logging.basicConfig(level=logging.DEBUG)
