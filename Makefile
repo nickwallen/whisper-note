@@ -11,7 +11,7 @@ install-dev:
 	$(PIP) install -r requirements-dev.txt
 
 run: 
-	$(UVICORN) main:app --reload --port 8000
+	$(UVICORN) api:app --reload --port 8000
 
 format:
 	black .
