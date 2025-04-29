@@ -1,6 +1,17 @@
+import os
 from typing import List, Optional
 import re
 import logging
+from dataclasses import dataclass
+from datetime import datetime
+
+
+@dataclass
+class FileMetadata:
+    file_name: str
+    file_size: int
+    modified_at: float
+    created_at: float
 
 
 class Chunker:
@@ -28,26 +39,42 @@ class Chunker:
         )
 
     def chunk_file(self, file_path: str) -> List[str]:
+        """
+        Chunk a file into smaller pieces.
+        Returns a list of strings.
+        """
         try:
+            metadata = self._extract_metadata(file_path)
             with open(file_path, "r", encoding="utf-8") as f:
                 text = f.read()
-            return self.chunk_text(text)
+            return self._chunk_text(text, metadata)
         except UnicodeDecodeError as e:
             raise ValueError(f"Could not decode file {file_path}: {e}") from e
 
-    def chunk_text(self, text: str) -> List[str]:
+    def _chunk_text(
+        self, text: str, metadata: Optional[FileMetadata] = None
+    ) -> List[str]:
+        """
+        Chunk text into smaller pieces based on patterns in the text (e.g., paragraphs).
+        Returns a list of strings.
+        """
         if self.split_on:
             # Split on regex pattern (e.g., paragraphs)
             parts = re.split(self.split_on, text)
             chunks = []
             for part in parts:
-                chunks.extend(self._chunk_by_size(part))
+                chunks.extend(self._chunk_by_size(part, metadata))
             return [c for c in chunks if c.strip()]
-            
-        return self._chunk_by_size(text)
 
-    def _chunk_by_size(self, text: str) -> List[str]:
-        # Sliding window chunking with optional overlap
+        return self._chunk_by_size(text, metadata)
+
+    def _chunk_by_size(
+        self, text: str, metadata: Optional[FileMetadata] = None
+    ) -> List[str]:
+        """
+        Chunks text into smaller pieces based on the specified chunk size and overlap.
+        Returns a list of strings.
+        """
         chunks = []
         start = 0
         while start < len(text):
@@ -55,10 +82,29 @@ class Chunker:
             chunk = text[start:end]
             if chunk.strip():
                 self.logger.debug(f"Created chunk: {chunk}")
-                chunks.append(chunk)
+                if metadata:
+                    created_str = datetime.fromtimestamp(metadata.created_at).strftime(
+                        "%A, %B %d, %Y"
+                    )
+                    modified_str = datetime.fromtimestamp(
+                        metadata.modified_at
+                    ).strftime("%A, %B %d, %Y")
+                    chunks.append(
+                        f"User note: title '{metadata.file_name}', created at '{created_str}', last modified at '{modified_str}': {chunk}"
+                    )
+                else:
+                    chunks.append(chunk)
             start += (
                 self.chunk_size - self.overlap
                 if self.chunk_size > self.overlap
                 else self.chunk_size
             )
         return chunks
+
+    def _extract_metadata(self, file_path: str) -> FileMetadata:
+        return FileMetadata(
+            file_name=os.path.basename(file_path),
+            file_size=os.path.getsize(file_path),
+            modified_at=os.path.getmtime(file_path),
+            created_at=os.path.getctime(file_path),
+        )
