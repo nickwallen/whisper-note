@@ -33,7 +33,7 @@ class Chunker:
                 text = f.read()
             return self.chunk_text(text)
         except UnicodeDecodeError as e:
-            raise Exception(f"UnicodeDecodeError in file {file_path}: {e}")
+            raise ValueError(f"Could not decode file {file_path}: {e}") from e
 
     def chunk_text(self, text: str) -> List[str]:
         if self.split_on:
@@ -43,8 +43,8 @@ class Chunker:
             for part in parts:
                 chunks.extend(self._chunk_by_size(part))
             return [c for c in chunks if c.strip()]
-        else:
-            return self._chunk_by_size(text)
+            
+        return self._chunk_by_size(text)
 
     def _chunk_by_size(self, text: str) -> List[str]:
         # Sliding window chunking with optional overlap
