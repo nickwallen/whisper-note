@@ -44,6 +44,7 @@ def query(
     scope: Optional[Path] = typer.Option(
         None, help="Restrict search to a file or directory."
     ),
+    debug: bool = typer.Option(False, "--debug", help="Show context along with the answer."),
 ):
     """Ask a question about your indexed files."""
     try:
@@ -56,10 +57,13 @@ def query(
         resp.raise_for_status()
         data = resp.json()
         answer = data.get("results", {}).get("answer")
+        context = data.get("results", {}).get("context")
         if answer:
-            typer.echo(answer)
+            typer.echo("Answer:\n" + answer)
+            if debug and context:
+                typer.echo("\nContext:\n" + json.dumps(context, indent=2, ensure_ascii=False))
         else:
-            typer.secho("No answer found in response.", fg=typer.colors.YELLOW)
+            typer.echo("No answer found in response.", fg=typer.colors.YELLOW)
     except Exception as e:
         typer.secho(f"Query failed: {e}", fg=typer.colors.RED)
 
