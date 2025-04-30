@@ -79,27 +79,25 @@ class Chunker:
         start = 0
         while start < len(text):
             end = min(start + self.chunk_size, len(text))
-            chunk = text[start:end]
-            if chunk.strip():
-                self.logger.debug(f"Created chunk: {chunk}")
-                if metadata:
-                    created_str = datetime.fromtimestamp(metadata.created_at).strftime(
-                        "%A, %B %d, %Y"
-                    )
-                    modified_str = datetime.fromtimestamp(
-                        metadata.modified_at
-                    ).strftime("%A, %B %d, %Y")
-                    chunks.append(
-                        f"User note: title '{metadata.file_name}', created at '{created_str}', last modified at '{modified_str}': {chunk}"
-                    )
-                else:
-                    chunks.append(chunk)
-            start += (
-                self.chunk_size - self.overlap
-                if self.chunk_size > self.overlap
-                else self.chunk_size
-            )
+            text_segment = text[start:end]
+            if text_segment.strip():
+                chunk = self._create_chunk(text_segment, metadata)
+                chunks.append(chunk)
+            start += self.chunk_size - self.overlap if self.chunk_size > self.overlap else self.chunk_size
         return chunks
+
+    def _create_chunk(self, text_segment: str, metadata: Optional[FileMetadata]) -> str:
+        """
+        Format the chunk with metadata if provided, and log the chunk.
+        """
+        if metadata:
+            created_at = format_date(metadata.created_at)
+            modified_at = format_date(metadata.modified_at)
+            chunk = f"User note: title '{metadata.file_name}', created at '{created_at}', last modified at '{modified_at}': {text_segment}"
+        else:
+            chunk = text_segment
+        self.logger.debug(f"Created chunk: {chunk}")
+        return chunk
 
     def _extract_metadata(self, file_path: str) -> FileMetadata:
         return FileMetadata(
@@ -108,3 +106,7 @@ class Chunker:
             modified_at=os.path.getmtime(file_path),
             created_at=os.path.getctime(file_path),
         )
+
+
+def format_date(ts: float) -> str:
+    return datetime.fromtimestamp(ts).strftime("%A, %B %d, %Y")
