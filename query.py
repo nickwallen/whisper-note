@@ -1,12 +1,12 @@
-import requests
+
 from dataclasses import dataclass
 from typing import List, Any, Optional
 from embeddings import Embedder
 from vector_store import VectorStore
-import json
+
 import logging
-import os
 from lang_model import LangModel, OllamaLangModel
+from datetime import datetime
 
 
 @dataclass
@@ -48,6 +48,7 @@ class QueryEngine:
         context_texts = [
             self.ensure_str(chunk.text) for chunk in similar_context if chunk.text
         ]
+        context_texts.append(self._current_date_context())
         context = "\n".join(context_texts)
         if not prompt_template:
             prompt_template = (
@@ -84,6 +85,11 @@ class QueryEngine:
             f"Found {len(similar_context)} similar context chunks: {similar_context}"
         )
         return similar_context
+
+    @staticmethod
+    def _current_date_context():
+        current_date = datetime.now().strftime('%A, %B %d, %Y')
+        return f"Today's date is {current_date}\n"
 
     # Compose context string, ensuring all items are strings
     @staticmethod
