@@ -67,9 +67,9 @@ def query(
                     "\nContext:\n" + json.dumps(context, indent=2, ensure_ascii=False)
                 )
         else:
-            typer.echo("No answer found in response.", fg=typer.colors.YELLOW)
+            typer.secho("No answer found in response.", fg=typer.colors.YELLOW)
     except Exception as e:
-        typer.echo(f"Query failed: {e}", fg=typer.colors.RED)
+        typer.secho(f"Query failed: {e}", fg=typer.colors.RED)
 
 
 if __name__ == "__main__":
