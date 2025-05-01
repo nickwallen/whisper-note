@@ -58,7 +58,6 @@ class Indexer:
                 metrics = metrics.merge(file_metrics)
             except Exception as e:
                 metrics.failed_files.append({"file": file_path, "error": str(e)})
-                metrics.file_count += 1
                 continue
 
         return metrics
@@ -72,24 +71,27 @@ class Indexer:
         logger.debug(f"Indexing file: {file_path}")
 
         try:
+            # Check if file is already indexed
             file_hash = self._compute_file_hash(file_path)
             if self.vector_store.is_file_hash_indexed(file_path, file_hash):
+                logger.debug(f"File already indexed: {file_path}")
                 return IndexerMetrics(file_count=0, chunk_count=0)
+
+            # Index file
             self.vector_store.delete_by_file_path(file_path)
             chunks = self.chunker.chunk_file(file_path)
             embeddings = self.embedder.embed(chunks) if chunks else []
-            ids = []
-            metadatas = []
-            mod_time_iso = self._get_mod_time(file_path)
+            ids, metadatas = [], []
             for i, chunk in enumerate(chunks):
                 ids.append(f"{file_hash}::chunk{i}")
                 metadatas.append(
-                    self._create_metadata(file_path, file_hash, i, chunk, mod_time_iso)
+                    self._create_metadata(file_path, file_hash, i, chunk, self._get_mod_time(file_path))
                 )
             if ids:
                 self.vector_store.add(ids, embeddings, chunks, metadatas)
             return IndexerMetrics(file_count=1, chunk_count=len(ids))
         except Exception as e:
+            logger.debug(f"Failed to index file: {file_path}, error: {str(e)}")
             return IndexerMetrics(
                 file_count=0,
                 chunk_count=0,
