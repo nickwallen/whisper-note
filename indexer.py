@@ -35,7 +35,7 @@ class Indexer:
         vector_store: Optional[VectorStore] = None,
     ):
         self.embedder = embedder or Embedder()
-        self.chunker = chunker or Chunker()
+        self.chunker = chunker or Chunker(split_on=None)
         self.vector_store = vector_store or VectorStore()
 
     def index_dir(
