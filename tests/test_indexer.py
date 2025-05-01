@@ -2,8 +2,10 @@ import os
 import tempfile
 import shutil
 import pytest
+import re
 from indexer import Indexer
 from vector_store import VectorStore
+import chromadb
 
 
 class DummyEmbedder:
@@ -52,51 +54,48 @@ def test_indexer_basic(temp_dir_with_files):
         results = indexer.vector_store.collection.get(where={"file": abs_file})
         for md in results["metadatas"]:
             assert "modification_time" in md
-            # Check ISO format (YYYY-MM-DDTHH:MM:SS...)
-            import re
-
             assert re.match(
                 r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}", md["modification_time"]
             )
 
 
-def test_indexer_skips_unchanged_file():
-    temp_dir = tempfile.mkdtemp()
-    file_path = os.path.join(temp_dir, "foo.txt")
-    with open(file_path, "w") as f:
-        f.write("alpha\nbeta\n")
+def test_indexer_skips_unchanged_file(tmp_path):
+    file_path = tmp_path / "foo.txt"
+    file_path.write_text("alpha\nbeta\n")
     indexer = Indexer(
         embedder=DummyEmbedder(),
         chunker=DummyChunker(),
-        vector_store=VectorStore(collection_name="skip_test"),
+        vector_store=VectorStore(
+            collection_name="skip_test", chroma_client=chromadb.Client()
+        ),
     )
     # First index
-    metrics1 = indexer.index_dir(temp_dir, file_exts=[".txt"])
+    metrics1 = indexer.index_dir(str(tmp_path), file_exts=[".txt"])
     # Get vector count after first index
-    abs_file = os.path.join(temp_dir, "foo.txt")
+    abs_file = str(file_path)
     count1 = len(indexer.vector_store.collection.get(where={"file": abs_file})["ids"])
     # Second index (should skip, as file unchanged)
-    metrics2 = indexer.index_dir(temp_dir, file_exts=[".txt"])
+    metrics2 = indexer.index_dir(str(tmp_path), file_exts=[".txt"])
     count2 = len(indexer.vector_store.collection.get(where={"file": abs_file})["ids"])
     assert count1 == 2
     assert count2 == 2  # Should not increase
     assert metrics2.file_count == 0  # Should be zero, as nothing was indexed
     # Now change the file
-    with open(file_path, "w") as f:
-        f.write("gamma\ndelta\n")
-    metrics3 = indexer.index_dir(temp_dir, file_exts=[".txt"])
+    file_path.write_text("gamma\ndelta\n")
+    metrics3 = indexer.index_dir(str(tmp_path), file_exts=[".txt"])
     count3 = len(indexer.vector_store.collection.get(where={"file": abs_file})["ids"])
     assert count3 == 2  # Still two, but new content
 
 
-def test_indexer_empty_dir():
-    temp_dir = tempfile.mkdtemp()
+def test_indexer_empty_dir(tmp_path):
     indexer = Indexer(
         embedder=DummyEmbedder(),
         chunker=DummyChunker(),
-        vector_store=VectorStore(collection_name="test_indexer_empty"),
+        vector_store=VectorStore(
+            collection_name="test_indexer_empty", chroma_client=chromadb.Client()
+        ),
     )
-    metrics = indexer.index_dir(temp_dir, file_exts=[".txt"])
+    metrics = indexer.index_dir(str(tmp_path), file_exts=[".txt"])
     assert metrics.file_count == 0
     assert metrics.chunk_count == 0
 
@@ -105,48 +104,46 @@ def test_indexer_non_matching_extensions(temp_dir_with_files):
     indexer = Indexer(
         embedder=DummyEmbedder(),
         chunker=DummyChunker(),
-        vector_store=VectorStore(collection_name="test_indexer_nomatch"),
+        vector_store=VectorStore(
+            collection_name="test_indexer_nomatch", chroma_client=chromadb.Client()
+        ),
     )
     metrics = indexer.index_dir(temp_dir_with_files, file_exts=[".md"])  # No .md files
     assert metrics.file_count == 0
     assert metrics.chunk_count == 0
 
 
-def test_indexer_file_no_extension():
-    import tempfile, shutil
-
-    temp_dir = tempfile.mkdtemp()
-    file_path = os.path.join(temp_dir, "filewithoutext")
-    with open(file_path, "w") as f:
-        f.write("line1\nline2\n")
+def test_indexer_file_no_extension(tmp_path):
+    file_path = tmp_path / "filewithoutext"
+    file_path.write_text("line1\nline2\n")
     indexer = Indexer(
         embedder=DummyEmbedder(),
         chunker=DummyChunker(),
-        vector_store=VectorStore(collection_name="test_indexer_noext"),
+        vector_store=VectorStore(
+            collection_name="test_indexer_noext", chroma_client=chromadb.Client()
+        ),
     )
-    metrics = indexer.index_dir(temp_dir)
+    metrics = indexer.index_dir(str(tmp_path))
     assert metrics.file_count == 1
     assert metrics.chunk_count == 2
     # Check vector store with absolute path
-    results = indexer.vector_store.collection.get(where={"file": file_path})
+    results = indexer.vector_store.collection.get(where={"file": str(file_path)})
     assert len(results["ids"]) == 2
     for md in results["metadatas"]:
-        assert md["file"] == file_path
+        assert md["file"] == str(file_path)
 
 
-def test_indexer_file_whitespace_only():
-    import tempfile, shutil
-
-    temp_dir = tempfile.mkdtemp()
-    file_path = os.path.join(temp_dir, "whitespace.txt")
-    with open(file_path, "w") as f:
-        f.write("   \n   \n")
+def test_indexer_file_whitespace_only(tmp_path):
+    file_path = tmp_path / "whitespace.txt"
+    file_path.write_text("   \n   \n")
     indexer = Indexer(
         embedder=DummyEmbedder(),
         chunker=DummyChunker(),
-        vector_store=VectorStore(collection_name="test_indexer_ws"),
+        vector_store=VectorStore(
+            collection_name="test_indexer_ws", chroma_client=chromadb.Client()
+        ),
     )
-    metrics = indexer.index_dir(temp_dir, file_exts=[".txt"])
+    metrics = indexer.index_dir(str(tmp_path), file_exts=[".txt"])
     assert metrics.file_count == 1
     assert metrics.chunk_count == 0
 

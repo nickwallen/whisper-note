@@ -5,9 +5,11 @@ from typing import List, Dict, Optional
 
 class VectorStore:
     def __init__(
-        self, collection_name: str = "notes", persist_directory: str = "./chroma_db"
+        self,
+        collection_name: str = "notes",
+        chroma_client: Optional[chromadb.ClientAPI] = None,
     ):
-        self.client = chromadb.Client(Settings(persist_directory=persist_directory))
+        self.client = chroma_client or chromadb.PersistentClient()
         self.collection = self.client.get_or_create_collection(collection_name)
 
     def delete_by_file_path(self, rel_path: str):

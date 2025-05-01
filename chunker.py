@@ -83,7 +83,11 @@ class Chunker:
             if text_segment.strip():
                 chunk = self._create_chunk(text_segment, metadata)
                 chunks.append(chunk)
-            start += self.chunk_size - self.overlap if self.chunk_size > self.overlap else self.chunk_size
+            start += (
+                self.chunk_size - self.overlap
+                if self.chunk_size > self.overlap
+                else self.chunk_size
+            )
         return chunks
 
     def _create_chunk(self, text_segment: str, metadata: Optional[FileMetadata]) -> str:

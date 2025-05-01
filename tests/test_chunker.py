@@ -1,7 +1,4 @@
-import pytest
-import os
-import tempfile
-from chunker import Chunker, FileMetadata
+from chunker import Chunker
 import re
 
 
