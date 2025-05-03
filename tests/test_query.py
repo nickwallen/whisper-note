@@ -12,14 +12,14 @@ class DummyVectorStore:
     def __init__(self):
         self.queries = []
 
-    def query(self, embedding, n_results=5):
+    def query(self, embedding, max_results=5):
         # Return dummy results based on embedding length
-        # For testing, just echo the embedding and n_results
+        # For testing, just echo the embedding and max_results
         return {
-            "ids": [f"id_{i}" for i in range(n_results)],
-            "documents": [f"doc_{i}" for i in range(n_results)],
-            "metadatas": [{"meta": i} for i in range(n_results)],
-            "distances": [float(i) for i in range(n_results)],
+            "ids": [f"id_{i}" for i in range(max_results)],
+            "documents": [f"doc_{i}" for i in range(max_results)],
+            "metadatas": [{"meta": i} for i in range(max_results)],
+            "distances": [float(i) for i in range(max_results)],
         }
 
 
@@ -34,7 +34,7 @@ def test_query_basic():
         vector_store=DummyVectorStore(),
         lang_model=DummyLangModel(),
     )
-    actual = engine.query("test", n_results=3)
+    actual = engine.query("test", max_results=3)
     expected = QueryResult(
         answer="dummy answer",
         context=[
@@ -49,7 +49,7 @@ def test_query_basic():
 
 def test_query_empty():
     class EmptyVectorStore(DummyVectorStore):
-        def query(self, embedding, n_results=5):
+        def query(self, embedding, max_results=5):
             return {"ids": [], "documents": [], "metadatas": [], "distances": []}
 
     engine = QueryEngine(
@@ -57,7 +57,7 @@ def test_query_empty():
         vector_store=EmptyVectorStore(),
         lang_model=DummyLangModel(),
     )
-    actual = engine.query("", n_results=5)
+    actual = engine.query("", max_results=5)
     expected = QueryResult(answer="dummy answer", context=[])
     assert actual == expected
     assert actual.answer
@@ -65,7 +65,7 @@ def test_query_empty():
 
 def test_query_handles_missing_fields():
     class PartialVectorStore(DummyVectorStore):
-        def query(self, embedding, n_results=2):
+        def query(self, embedding, max_results=2):
             return {"ids": ["a", "b"]}  # missing other fields
 
     engine = QueryEngine(
@@ -73,7 +73,7 @@ def test_query_handles_missing_fields():
         vector_store=PartialVectorStore(),
         lang_model=DummyLangModel(),
     )
-    actual = engine.query("foo", n_results=2)
+    actual = engine.query("foo", max_results=2)
     expected = QueryResult(
         answer="dummy answer",
         context=[

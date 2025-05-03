@@ -99,7 +99,7 @@ class QueryResponse(BaseModel):
 def query(request: QueryRequest, collection_name: str = Depends(get_collection_name)):
     try:
         engine = QueryEngine(vector_store=VectorStore(collection_name=collection_name))
-        result = engine.query(request.query, n_results=10)
+        result = engine.query(request.query, max_results=10)
         resp = QueryResponse(answer=result.answer, context=result.context)
         return resp
     except Exception as e:

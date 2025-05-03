@@ -71,15 +71,36 @@ class VectorStore:
         )
 
     def query(
-        self, embedding: List[float], n_results: int = 10
+        self,
+        embedding: List[float],
+        start_time: Optional[float] = None,
+        end_time: Optional[float] = None,
+        time_field: str = "created_at",
+        max_results: int = 10,
     ) -> chromadb.QueryResult:
         """
         Query the vector store for the most similar embeddings.
+        Optionally filter by a time range on a given metadata field.
         embedding: The query embedding vector
-        n_results: Number of results to return
+        start_time: (optional) minimum timestamp (inclusive)
+        end_time: (optional) maximum timestamp (inclusive)
+        time_field: (default 'created_at') metadata field to filter by
+        max_results: Number of results to return
         """
+        where_clauses = []
+        if start_time is not None:
+            where_clauses.append({time_field: {"$gte": start_time}})
+        if end_time is not None:
+            where_clauses.append({time_field: {"$lte": end_time}})
+        if len(where_clauses) > 1:
+            where = {"$and": where_clauses}
+        elif len(where_clauses) == 1:
+            where = where_clauses[0]
+        else:
+            where = None
         return self.collection.query(
             query_embeddings=[embedding],
-            n_results=n_results,
+            n_results=max_results,
             include=["documents", "metadatas", "distances"],
+            where=where,
         )

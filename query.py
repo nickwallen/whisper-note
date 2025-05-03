@@ -28,12 +28,12 @@ class QueryEngine:
         self.vector_store = vector_store or VectorStore()
         self.lang_model = lang_model or OllamaLangModel()
 
-    def query(self, query_string, n_results=10, prompt_template=None) -> QueryResult:
+    def query(self, query_string, max_results=10, prompt_template=None) -> QueryResult:
         """
         Retrieve top matching chunks and use LangModel to answer the query using those chunks as context.
         Returns a QueryResult with the answer and the context used.
         """
-        context = self._find_similar_context(query_string, max_results=n_results)
+        context = self._find_similar_context(query_string, max_results=max_results)
         prompt = self._build_prompt(query_string, context, prompt_template)
         answer = self.lang_model.generate(prompt)
         return QueryResult(answer=answer, context=context)
@@ -70,20 +70,19 @@ class QueryEngine:
         If you want to support multi-query (batch queries), you must update this logic.
         """
         query_embedding = self.embedder.embed([query])[0]
-        results = self.vector_store.query(query_embedding, n_results=max_results)
+        results = self.vector_store.query(query_embedding, max_results=max_results)
         logging.getLogger(__name__).debug(f"ChromaDB raw results: {results}")
 
-        # ChromaDB returns lists of lists for multi-query; we only support single-query.
-        def get_first_list(key):
-            val = results.get(key, [])
-            if isinstance(val, list) and len(val) > 0 and isinstance(val[0], list):
-                return val[0]
-            return val
-
-        ids = get_first_list("ids")
-        documents = get_first_list("documents") if "documents" in results else []
-        metadatas = get_first_list("metadatas") if "metadatas" in results else []
-        distances = get_first_list("distances") if "distances" in results else []
+        ids = self.get_first_list("ids", results)
+        documents = (
+            self.get_first_list("documents", results) if "documents" in results else []
+        )
+        metadatas = (
+            self.get_first_list("metadatas", results) if "metadatas" in results else []
+        )
+        distances = (
+            self.get_first_list("distances", results) if "distances" in results else []
+        )
 
         similar_context = []
         for i in range(len(ids)):
@@ -111,3 +110,14 @@ class QueryEngine:
         if isinstance(x, list):
             return "\n".join(str(i) for i in x)
         return str(x)
+
+    @staticmethod
+    def get_first_list(key, results):
+        """
+        Utility to extract the first list from ChromaDB results for a given key.
+        Only supports single-query (not multi-query).
+        """
+        val = results.get(key, [])
+        if isinstance(val, list) and len(val) > 0 and isinstance(val[0], list):
+            return val[0]
+        return val

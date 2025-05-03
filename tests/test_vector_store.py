@@ -8,7 +8,7 @@ def test_add_and_query_vector_store():
     embeddings = [[0.1, 0.2, 0.3], [0.4, 0.5, 0.6]]
     metadatas = [{"file": "a.md"}, {"file": "b.md"}]
     store.add(ids, embeddings, ["doc1", "doc2"], metadatas)
-    results = store.query([0.1, 0.2, 0.3], n_results=1)
+    results = store.query([0.1, 0.2, 0.3], max_results=1)
     assert "ids" in results
     assert results["ids"][0][0] == "doc1"
 
@@ -19,7 +19,7 @@ def test_empty_add_and_query():
     with pytest.raises(ValueError):
         store.add(ids=[], embeddings=[], documents=[], metadatas=[])
     # Query with no data should still work and return empty
-    results = store.query([0.0, 0.0, 0.0], n_results=1)
+    results = store.query([0.0, 0.0, 0.0], max_results=1)
     assert "ids" in results
     assert results["ids"][0] == []
 
@@ -56,9 +56,48 @@ def test_duplicate_ids():
         metadatas=[{"file": "f.md"}],
     )
     # Should not error, but check only one result returned
-    results = store.query([0.1, 0.2, 0.3], n_results=2)
+    results = store.query([0.1, 0.2, 0.3], max_results=2)
     assert "ids" in results
     assert results["ids"][0].count("dup") >= 1
+
+
+def _setup_store_with_created_at():
+    store = VectorStore(collection_name="created_at_test")
+    ids = ["doc1", "doc2", "doc3"]
+    embeddings = [[0.1, 0.2, 0.3], [0.4, 0.5, 0.6], [0.7, 0.8, 0.9]]
+    metadatas = [
+        {"file": "a.md", "created_at": 1643723400},
+        {"file": "b.md", "created_at": 1643723401},
+        {"file": "c.md", "created_at": 1643723402},
+    ]
+    store.add(ids, embeddings, ["doc1", "doc2", "doc3"], metadatas)
+    return store
+
+
+def test_query_with_start_time():
+    store = _setup_store_with_created_at()
+    results = store.query([0.1, 0.2, 0.3], max_results=3, start_time=1643723401)
+    assert "ids" in results
+    # Should get doc2 and doc3
+    assert set(results["ids"][0]) == {"doc2", "doc3"}
+
+
+def test_query_with_end_time():
+    store = _setup_store_with_created_at()
+    results = store.query([0.1, 0.2, 0.3], max_results=3, end_time=1643723401)
+    assert "ids" in results
+    # Should get doc1 and doc2
+    assert set(results["ids"][0]) == {"doc1", "doc2"}
+
+
+def test_query_with_start_and_end_time():
+    store = _setup_store_with_created_at()
+    results = store.query(
+        [0.1, 0.2, 0.3], max_results=3, start_time=1643723401, end_time=1643723401
+    )
+    assert "ids" in results
+    # Should get only doc2
+    assert set(results["ids"][0]) == {"doc2"}
 
 
 def test_query_more_than_available():
@@ -69,7 +108,7 @@ def test_query_more_than_available():
         documents=["doc"],
         metadatas=[{"file": "f.md"}],
     )
-    results = store.query([0.1, 0.2, 0.3], n_results=10)
+    results = store.query([0.1, 0.2, 0.3], max_results=10)
     assert len(results["ids"][0]) == 1
 
 
@@ -131,4 +170,4 @@ def test_non_numeric_embedding():
             metadatas=[{"file": "f.md"}],
         )
     with pytest.raises(Exception):
-        store.query(["a", "b", "c"], n_results=1)
+        store.query(["a", "b", "c"], max_results=1)
