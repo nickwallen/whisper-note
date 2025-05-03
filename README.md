@@ -1,8 +1,4 @@
-
-
-
-
-## Never Dread Status Updates Again
+## Goal: Never Dread Status Updates Again
 
 If you’re a developer, chances are you spend too much time writing repetitive status updates—daily stand-ups, weekly team summaries, biweekly group reports. While these updates are essential for coordination and transparency, the process of preparing them is tedious, time-consuming, and often interrupts your flow.
 
@@ -56,33 +52,10 @@ Type your question and press Enter. Type 'q' or 'Ctrl+C' to end the session.
 ╰────────────────────────────────────────────────────────────────────────────────────────╯
 ```
 
-### Daemon
-
-
-
-## Plan
-
-### Index
-
-1. Read from a directory of markdown or text
-2. Chunk the file content
-3. Add additional metadata like create/modified time and file name
-4. Create embeddings for each chunk
-5. Store embeddings in a simple local vector store (like ChromaDB)
-
-### Query
-
-1. Create embeddings for the query
-2. Find the most similar chunks
-3. Send the most similar chunks to a language model along with the query
-4. Get the response from the language model
-
-
 ## Ollama Installation
 
-Ollama is required for running local language models (LLMs) privately on your machine. You can install it using one of the following methods:
+Ollama is required for running local language models (LLMs) privately on your machine. You can install it using:
 
-### Homebrew
 ```sh
 brew install ollama
 ```
