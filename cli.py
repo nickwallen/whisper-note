@@ -136,11 +136,12 @@ def chat():
                 typer.echo("Exiting chat.")
                 break
             payload = {"query": question}
-            resp = requests.post(
-                f"{WHISPER_NOTE_DAEMON_URL}/api/v1/query", json=payload, timeout=TIMEOUT
-            )
-            resp.raise_for_status()
-            data = resp.json()
+            with console.status("Thinking...", spinner="dots"):
+                resp = requests.post(
+                    f"{WHISPER_NOTE_DAEMON_URL}/api/v1/query", json=payload, timeout=TIMEOUT
+                )
+                resp.raise_for_status()
+                data = resp.json()
             answer = data.get("results", {}).get("answer")
             # Add a blank line before AI response
             console.print()
