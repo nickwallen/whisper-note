@@ -81,6 +81,10 @@ class QueryEngine:
         NOTE: This implementation only supports single-query (one embedding at a time).
         If you want to support multi-query (batch queries), you must update this logic.
         """
+        logging.getLogger(__name__).debug(
+            f"Finding similar context for query: {query}, start_time: {start_time}, end_time: {end_time} max_results: {max_results}"
+        )
+
         query_embedding = self.embedder.embed([query])[0]
         results = self.vector_store.query(
             query_embedding,
