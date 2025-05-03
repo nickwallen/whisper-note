@@ -62,7 +62,11 @@ class QueryEngine:
         return prompt
 
     def _find_similar_context(
-        self, query: str, max_results: int = 10
+        self,
+        query: str,
+        max_results: int = 10,
+        start_time: Optional[float] = None,
+        end_time: Optional[float] = None,
     ) -> List[ContextChunk]:
         """
         Retrieve top matching context chunks for a single query.
@@ -71,7 +75,6 @@ class QueryEngine:
         """
         query_embedding = self.embedder.embed([query])[0]
         results = self.vector_store.query(query_embedding, max_results=max_results)
-        logging.getLogger(__name__).debug(f"ChromaDB raw results: {results}")
 
         ids = self.get_first_list("ids", results)
         documents = (

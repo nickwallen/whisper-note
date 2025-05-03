@@ -1,6 +1,6 @@
 import chromadb
 from typing import List, Optional
-from dataclasses import dataclass
+from dataclasses import dataclass, fields
 
 
 @dataclass
@@ -24,8 +24,6 @@ class VectorStore:
         Return all metadata objects for the collection as a list of Metadata instances.
         Filters out any keys not present in the Metadata dataclass.
         """
-        from dataclasses import fields
-
         results = self.collection.get()
         metadatas = results.get("metadatas", [])
         metadata_fields = {f.name for f in fields(Metadata)}
