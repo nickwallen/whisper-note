@@ -2,11 +2,19 @@
 
 ## Goal
 
-An app that can access your daily notes allowing you to ask questions about them.
+### Never Dread Status Updates Again
 
-Use Cases:
-* Summarize the work that I completed this week?
-* What updates should I provide for stand-up?
+If you’re a developer or team member, chances are you spend too much time writing repetitive status updates—daily stand-ups, weekly team summaries, biweekly group reports. While these updates are essential for coordination and transparency, the process of preparing them is tedious, time-consuming, and often interrupts your flow.
+
+**This app is built to eliminate that friction.**
+
+By connecting directly to your daily notes, it lets you instantly generate context-aware, relevant updates—on demand. Instead of wracking your brain to recall what you did, just ask:
+
+- “Summarize the work I completed this week.”
+- “What updates should I provide for stand-up?”
+- “What were my biggest wins and blockers over the last two weeks?”
+
+No more manual sifting, no more copy-pasting. You get accurate, tailored updates in seconds, so you can focus on your real work—not on reporting it.
 
 ## Usage
 
