@@ -77,7 +77,7 @@ def build_indexer_metrics_from_metadata(metadata_list):
 
 
 @app.get("/api/v1/index", response_model=IndexMetricsResponse)
-def get_index_metrics(collection_name: str = Depends(get_collection_name)):
+def get_index(collection_name: str = Depends(get_collection_name)):
     """Return current index metrics (files, chunks, failed files)."""
     try:
         indexer = Indexer(vector_store=VectorStore(collection_name=collection_name))
@@ -92,7 +92,7 @@ def get_index_metrics(collection_name: str = Depends(get_collection_name)):
 
 
 @app.post("/api/v1/query")
-def query_endpoint(
+def query(
     request: QueryRequest, collection_name: str = Depends(get_collection_name)
 ):
     try:

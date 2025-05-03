@@ -1,7 +1,6 @@
 import typer
 from typing import List, Optional
 from pathlib import Path
-import sys
 import requests
 import json
 

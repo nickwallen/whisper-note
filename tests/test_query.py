@@ -1,4 +1,3 @@
-import pytest
 from query import QueryEngine, QueryResult, ContextChunk
 from lang_model import LangModel
 

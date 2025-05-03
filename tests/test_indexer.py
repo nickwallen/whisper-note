@@ -7,9 +7,6 @@ from indexer import Indexer
 from vector_store import VectorStore
 import chromadb
 
-from fastapi.testclient import TestClient
-from api import app
-
 
 class DummyEmbedder:
     def embed(self, texts):
@@ -85,7 +82,7 @@ def test_indexer_skips_unchanged_file(tmp_path):
         ),
     )
     # First index
-    metrics1 = indexer.index_dir(str(tmp_path), file_exts=[".txt"])
+    indexer.index_dir(str(tmp_path), file_exts=[".txt"])
     # Get vector count after first index
     abs_file = str(file_path)
     count1 = len(indexer.vector_store.collection.get(where={"file": abs_file})["ids"])
@@ -97,7 +94,7 @@ def test_indexer_skips_unchanged_file(tmp_path):
     assert metrics2.file_count == 0  # Should be zero, as nothing was indexed
     # Now change the file
     file_path.write_text("gamma\ndelta\n")
-    metrics3 = indexer.index_dir(str(tmp_path), file_exts=[".txt"])
+    indexer.index_dir(str(tmp_path), file_exts=[".txt"])
     count3 = len(indexer.vector_store.collection.get(where={"file": abs_file})["ids"])
     assert count3 == 2  # Still two, but new content
 
@@ -167,7 +164,7 @@ def test_indexer_file_empty():
 
     temp_dir = tempfile.mkdtemp()
     file_path = os.path.join(temp_dir, "empty.txt")
-    with open(file_path, "w") as f:
+    with open(file_path, "w"):
         pass  # Write nothing
     indexer = Indexer(
         embedder=DummyEmbedder(),

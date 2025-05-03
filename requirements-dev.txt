@@ -3,3 +3,4 @@ requests
 testcontainers
 testcontainers[ollama]
 black
+ruff

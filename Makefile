@@ -3,6 +3,10 @@ PYTHON=$(VENV)/bin/python
 PIP=$(VENV)/bin/pip
 UVICORN=$(VENV)/bin/uvicorn
 
+.DEFAULT_GOAL := default
+
+default: install-dev format lint test
+
 install:
 	$(PIP) install -r requirements.txt
 
@@ -15,6 +19,9 @@ run:
 
 format:
 	black .
+
+lint:
+	ruff check .
 
 test:
 	$(VENV)/bin/pytest
