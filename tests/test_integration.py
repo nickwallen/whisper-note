@@ -1,18 +1,21 @@
 import os
 import tempfile
 from fastapi.testclient import TestClient
-from api import app
+from api import app, get_collection_name
 import pytest
 import logging
+import uuid
 
 logging.basicConfig(level=logging.DEBUG)
 
 
 @pytest.mark.integration
 def test_index_and_query(ollama_container):
+    test_collection = f"test_index_and_query_{uuid.uuid4()}"
+    app.dependency_overrides[get_collection_name] = lambda: test_collection
+
     client = TestClient(app)
     with tempfile.TemporaryDirectory() as tmpdir:
-
         # Create a set of notes to index
         monday = os.path.join(tmpdir, "Daily, Monday.txt")
         with open(monday, "w") as f:
@@ -38,3 +41,4 @@ def test_index_and_query(ollama_container):
         data = resp.json()
         answer = data["results"]["answer"]
         assert "login bug" in answer.lower() or "fixed" in answer.lower()
+    app.dependency_overrides = {}  # Clean up after test

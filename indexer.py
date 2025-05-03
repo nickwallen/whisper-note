@@ -85,7 +85,9 @@ class Indexer:
             for i, chunk in enumerate(chunks):
                 ids.append(f"{file_hash}::chunk{i}")
                 metadatas.append(
-                    self._create_metadata(file_path, file_hash, i, chunk, self._get_mod_time(file_path))
+                    self._create_metadata(
+                        file_path, file_hash, i, chunk, self._get_mod_time(file_path)
+                    )
                 )
             if ids:
                 self.vector_store.add(ids, embeddings, chunks, metadatas)

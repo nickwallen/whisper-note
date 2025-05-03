@@ -7,6 +7,9 @@ from indexer import Indexer
 from vector_store import VectorStore
 import chromadb
 
+from fastapi.testclient import TestClient
+from api import app
+
 
 class DummyEmbedder:
     def embed(self, texts):
@@ -57,6 +60,18 @@ def test_indexer_basic(temp_dir_with_files):
             assert re.match(
                 r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}", md["modification_time"]
             )
+
+
+def test_get_index_metrics_endpoint(temp_dir_with_files):
+    indexer = Indexer(
+        embedder=DummyEmbedder(),
+        chunker=DummyChunker(),
+        vector_store=VectorStore(collection_name="test_indexer_metrics"),
+    )
+    metrics = indexer.index_dir(temp_dir_with_files, file_exts=[".txt"])
+    assert metrics.file_count == 3
+    assert metrics.chunk_count == 7
+    assert isinstance(metrics.failed_files, list)
 
 
 def test_indexer_skips_unchanged_file(tmp_path):
@@ -149,7 +164,6 @@ def test_indexer_file_whitespace_only(tmp_path):
 
 
 def test_indexer_file_empty():
-    import tempfile, shutil
 
     temp_dir = tempfile.mkdtemp()
     file_path = os.path.join(temp_dir, "empty.txt")
@@ -166,7 +180,7 @@ def test_indexer_file_empty():
 
 
 def test_indexer_file_non_txt_extension():
-    import tempfile, shutil
+    import tempfile
 
     temp_dir = tempfile.mkdtemp()
     file_path = os.path.join(temp_dir, "note.md")

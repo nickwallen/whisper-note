@@ -1,10 +1,11 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Depends
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from typing import List, Optional
-from indexer import Indexer
+from indexer import Indexer, IndexerMetrics
 from fastapi.encoders import jsonable_encoder
 from query import QueryEngine
+from vector_store import VectorStore
 import traceback
 import logging
 
@@ -14,6 +15,12 @@ for mod in ["query", "indexer", "vector_store", "chunker"]:
     logging.getLogger(mod).setLevel(logging.DEBUG)
 
 app = FastAPI()
+
+
+class IndexMetricsResponse(BaseModel):
+    file_count: int
+    chunk_count: int
+    failed_files: List[dict] = []
 
 
 @app.get("/api/v1/health")
@@ -26,14 +33,26 @@ class IndexRequest(BaseModel):
     file_extensions: Optional[List[str]] = None  # Example: [".txt", ".md"]
 
 
-@app.post("/api/v1/index")
-def index_directory(request: IndexRequest):
+def get_collection_name():
+    return "notes"  # Default collection for production
+
+
+@app.post("/api/v1/index", response_model=IndexMetricsResponse)
+def index_directory(
+    request: IndexRequest,
+    collection_name: str = Depends(get_collection_name),
+):
     directory = request.directory
     file_extensions = request.file_extensions
     try:
-        indexer = Indexer()
+        indexer = Indexer(vector_store=VectorStore(collection_name=collection_name))
         metrics = indexer.index_dir(directory, file_exts=file_extensions)
-        return JSONResponse(content=jsonable_encoder(metrics))
+        response = IndexMetricsResponse(
+            file_count=metrics.file_count,
+            chunk_count=metrics.chunk_count,
+            failed_files=metrics.failed_files,
+        )
+        return response
     except Exception as e:
         return JSONResponse(
             status_code=500,
@@ -45,10 +64,39 @@ class QueryRequest(BaseModel):
     query: str
 
 
-@app.post("/api/v1/query")
-def query_endpoint(request: QueryRequest):
+def build_indexer_metrics_from_metadata(metadata_list):
+    file_set = set()
+    chunk_count = 0
+    for metadata in metadata_list:
+        if metadata.file:
+            file_set.add(metadata.file)
+            chunk_count += 1
+    return IndexerMetrics(
+        file_count=len(file_set), chunk_count=chunk_count, failed_files=[]
+    )
+
+
+@app.get("/api/v1/index", response_model=IndexMetricsResponse)
+def get_index_metrics(collection_name: str = Depends(get_collection_name)):
+    """Return current index metrics (files, chunks, failed files)."""
     try:
-        engine = QueryEngine()
+        indexer = Indexer(vector_store=VectorStore(collection_name=collection_name))
+        metadata = indexer.vector_store.get_all_metadata()
+        metrics = build_indexer_metrics_from_metadata(metadata)
+        return metrics
+    except Exception as e:
+        return JSONResponse(
+            status_code=500,
+            content={"error": str(e), "traceback": traceback.format_exc()},
+        )
+
+
+@app.post("/api/v1/query")
+def query_endpoint(
+    request: QueryRequest, collection_name: str = Depends(get_collection_name)
+):
+    try:
+        engine = QueryEngine(vector_store=VectorStore(collection_name=collection_name))
         result = engine.query(request.query, n_results=10)
         return JSONResponse(content={"results": jsonable_encoder(result)})
     except Exception as e:

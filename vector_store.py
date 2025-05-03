@@ -1,6 +1,14 @@
 import chromadb
 from chromadb.config import Settings
 from typing import List, Dict, Optional
+from dataclasses import dataclass
+
+
+@dataclass
+class Metadata:
+    file: str
+    file_hash: str = ""
+    # Add other fields as needed
 
 
 class VectorStore:
@@ -11,6 +19,14 @@ class VectorStore:
     ):
         self.client = chroma_client or chromadb.PersistentClient()
         self.collection = self.client.get_or_create_collection(collection_name)
+
+    def get_all_metadata(self) -> List[Metadata]:
+        """
+        Return all metadata objects for the collection as a list of Metadata instances.
+        """
+        results = self.collection.get()
+        metadatas = results.get("metadatas", [])
+        return [Metadata(**md) for md in metadatas if md]
 
     def delete_by_file_path(self, rel_path: str):
         """
@@ -32,7 +48,7 @@ class VectorStore:
         ids: List[str],
         embeddings: List[List[float]],
         documents: List[str],
-        metadatas: Optional[List[Dict]] = None,
+        metadatas: Optional[List[Metadata]] = None,
     ):
         """
         Add embeddings to the vector store.
@@ -58,9 +74,3 @@ class VectorStore:
             n_results=n_results,
             include=["documents", "metadatas", "distances"],
         )
-
-
-# Example usage:
-# store = VectorStore()
-# store.add(ids=[...], embeddings=[...], metadatas=[...])
-# results = store.query(embedding=[...], n_results=3)

@@ -1,4 +1,3 @@
-
 from dataclasses import dataclass
 from typing import List, Any, Optional
 from embeddings import Embedder
@@ -52,8 +51,7 @@ class QueryEngine:
         context = "\n".join(context_texts)
         if not prompt_template:
             prompt_template = (
-                "Answer the following question using only the provided context.\n"
-                "If the answer cannot be found in the context, say you don't know.\n\n"
+                "Answer the following question. The provided context includes the daily notes from the user.\n"
                 "Context:\n{context}\n\nQuestion: {query}\nAnswer:"
             )
         prompt = prompt_template.format(context=context, query=query_string)
@@ -88,7 +86,7 @@ class QueryEngine:
 
     @staticmethod
     def _current_date_context():
-        current_date = datetime.now().strftime('%A, %B %d, %Y')
+        current_date = datetime.now().strftime("%A, %B %d, %Y")
         return f"Today's date is {current_date}\n"
 
     # Compose context string, ensuring all items are strings
