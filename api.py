@@ -11,7 +11,16 @@ import logging
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
-for mod in ["query", "indexer", "vector_store", "chunker"]:
+for mod in [
+    "api",
+    "chunker",
+    "embeddings",
+    "indexer",
+    "lang_model",
+    "ollama",
+    "query",
+    "vector_store",
+]:
     logging.getLogger(mod).setLevel(logging.DEBUG)
 
 app = FastAPI()
@@ -64,18 +73,6 @@ class QueryRequest(BaseModel):
     query: str
 
 
-def build_indexer_metrics_from_metadata(metadata_list):
-    file_set = set()
-    chunk_count = 0
-    for metadata in metadata_list:
-        if metadata.file:
-            file_set.add(metadata.file)
-            chunk_count += 1
-    return IndexerMetrics(
-        file_count=len(file_set), chunk_count=chunk_count, failed_files=[]
-    )
-
-
 @app.get("/api/v1/index", response_model=IndexMetricsResponse)
 def get_index(collection_name: str = Depends(get_collection_name)):
     """Return current index metrics (files, chunks, failed files)."""
@@ -92,9 +89,7 @@ def get_index(collection_name: str = Depends(get_collection_name)):
 
 
 @app.post("/api/v1/query")
-def query(
-    request: QueryRequest, collection_name: str = Depends(get_collection_name)
-):
+def query(request: QueryRequest, collection_name: str = Depends(get_collection_name)):
     try:
         engine = QueryEngine(vector_store=VectorStore(collection_name=collection_name))
         result = engine.query(request.query, n_results=10)
@@ -104,3 +99,15 @@ def query(
             status_code=500,
             content={"error": str(e), "traceback": traceback.format_exc()},
         )
+
+
+def build_indexer_metrics_from_metadata(metadata_list):
+    file_set = set()
+    chunk_count = 0
+    for metadata in metadata_list:
+        if metadata.file:
+            file_set.add(metadata.file)
+            chunk_count += 1
+    return IndexerMetrics(
+        file_count=len(file_set), chunk_count=chunk_count, failed_files=[]
+    )
