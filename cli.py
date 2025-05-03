@@ -116,5 +116,44 @@ def query(
         typer.secho(f"Query failed: {e}", fg=typer.colors.RED)
 
 
+@app.command()
+def chat():
+    """Start an interactive chat session with your indexed notes."""
+    typer.echo("Type your question and press Enter. Type 'exit' or 'quit' to end the session.\n")
+    history = []
+    while True:
+        try:
+            from rich.console import Console
+            from rich.panel import Panel
+            from rich.markup import escape
+            console = Console()
+            try:
+                question = console.input("[bold green]> [/bold green]")
+            except EOFError:
+                typer.echo("\nExiting chat.")
+                return
+            if question.strip().lower() in {"exit", "quit"}:
+                typer.echo("Exiting chat.")
+                break
+            payload = {"query": question}
+            resp = requests.post(
+                f"{WHISPER_NOTE_DAEMON_URL}/api/v1/query", json=payload, timeout=TIMEOUT
+            )
+            resp.raise_for_status()
+            data = resp.json()
+            answer = data.get("results", {}).get("answer")
+            # Add a blank line before AI response
+            console.print()
+            if answer:
+                panel = Panel(escape(answer), title="AI", title_align="left", border_style="bright_cyan")
+                console.print(panel)
+            else:
+                console.print(Panel("No answer found in response.", border_style="yellow", title="AI", title_align="left"))
+        except (KeyboardInterrupt, EOFError):
+            typer.echo("\nExiting chat.")
+            return
+        except Exception as e:
+            typer.secho(f"Query failed: {e}", fg=typer.colors.RED)
+
 if __name__ == "__main__":
     app()

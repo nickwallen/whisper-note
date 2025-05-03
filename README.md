@@ -32,6 +32,9 @@ python cli.py query "What did I work on last week?"
 
 # Show current index status (files, chunks, failed files)
 python cli.py status
+
+# Start an interactive chat session
+python cli.py chat
 ```
 
 ### Daemon
