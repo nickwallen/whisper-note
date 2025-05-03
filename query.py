@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 from typing import List, Any, Optional
 from embeddings import Embedder
+from time_range import TimeRangeExtractor
 from vector_store import VectorStore
 
 import logging
@@ -27,13 +28,20 @@ class QueryEngine:
         self.embedder = embedder or Embedder()
         self.vector_store = vector_store or VectorStore()
         self.lang_model = lang_model or OllamaLangModel()
+        self.time_range_extractor = TimeRangeExtractor(lang_model=self.lang_model)
 
     def query(self, query_string, max_results=10, prompt_template=None) -> QueryResult:
         """
         Retrieve top matching chunks and use LangModel to answer the query using those chunks as context.
         Returns a QueryResult with the answer and the context used.
         """
-        context = self._find_similar_context(query_string, max_results=max_results)
+        time_range = self.time_range_extractor.extract(query_string)
+        context = self._find_similar_context(
+            query_string,
+            max_results=max_results,
+            start_time=time_range.start,
+            end_time=time_range.end,
+        )
         prompt = self._build_prompt(query_string, context, prompt_template)
         answer = self.lang_model.generate(prompt)
         return QueryResult(answer=answer, context=context)
