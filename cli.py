@@ -12,17 +12,38 @@ TIMEOUT = 60  # seconds
 app = typer.Typer(help="Whisper Note: Index and query your files with AI.")
 
 
+from rich.table import Table
+from rich.console import Console
+
 def print_index_metrics(data):
     file_count = data.get("file_count")
     chunk_count = data.get("chunk_count")
     failed_files = data.get("failed_files", [])
-    typer.echo(f"Indexed files: {file_count}")
-    typer.echo(f"Indexed chunks: {chunk_count}")
+    console = Console()
+
+    # Main metrics table
+    metrics_table = Table(show_header=True, header_style="bold magenta")
+    metrics_table.add_column("Metric", style="dim")
+    metrics_table.add_column("Value", style="bold")
+    metrics_table.add_row("Indexed files", str(file_count))
+    metrics_table.add_row("Indexed chunks", str(chunk_count))
+    metrics_table.add_row("Failed files", str(len(failed_files)))
+    console.print(metrics_table)
+
+    # Failed files table (if any)
     if failed_files:
-        typer.secho(f"Failed files: {len(failed_files)}", fg=typer.colors.YELLOW)
-        typer.echo(json.dumps(failed_files, indent=2, ensure_ascii=False))
-    else:
-        typer.echo("No failed files.")
+        failed_table = Table(show_header=True, header_style="bold red")
+        # Show all keys from first failed file as columns if possible
+        if isinstance(failed_files, list) and failed_files and isinstance(failed_files[0], dict):
+            for key in failed_files[0].keys():
+                failed_table.add_column(str(key))
+            for entry in failed_files:
+                failed_table.add_row(*(str(entry.get(k, "")) for k in failed_files[0].keys()))
+        else:
+            failed_table.add_column("Failed File")
+            for entry in failed_files:
+                failed_table.add_row(str(entry))
+        console.print(failed_table)
 
 @app.command()
 def index(
