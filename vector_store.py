@@ -23,10 +23,20 @@ class VectorStore:
     def get_all_metadata(self) -> List[Metadata]:
         """
         Return all metadata objects for the collection as a list of Metadata instances.
+        Filters out any keys not present in the Metadata dataclass.
         """
+        from dataclasses import fields
+
         results = self.collection.get()
         metadatas = results.get("metadatas", [])
-        return [Metadata(**md) for md in metadatas if md]
+        metadata_fields = {f.name for f in fields(Metadata)}
+        filtered = []
+        for md in metadatas:
+            if md:
+                filtered.append(
+                    Metadata(**{k: v for k, v in md.items() if k in metadata_fields})
+                )
+        return filtered
 
     def delete_by_file_path(self, rel_path: str):
         """
