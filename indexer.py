@@ -136,4 +136,10 @@ def get_modified_at(file_path: str) -> datetime:
 
 
 def get_created_at(file_path: str) -> datetime:
-    return datetime.fromtimestamp(os.path.getctime(file_path))
+    stat = os.stat(file_path)
+    if hasattr(stat, "st_birthtime"):
+        created = stat.st_birthtime
+    else:
+        created = stat.st_ctime
+    return datetime.fromtimestamp(created)
+
