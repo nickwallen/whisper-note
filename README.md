@@ -71,14 +71,9 @@ curl -s -X POST "http://localhost:8000/api/v1/query" \
 
 Ollama is required for running local language models (LLMs) privately on your machine. You can install it using one of the following methods:
 
-### Homebrew (recommended on macOS)
+### Homebrew
 ```sh
 brew install ollama
-```
-
-### Official Install Script (any Unix)
-```sh
-curl -fsSL https://ollama.com/install.sh | sh
 ```
 
 After installation, you can start the Ollama service using the Makefile:

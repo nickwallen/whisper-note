@@ -32,7 +32,17 @@ def index(
             timeout=TIMEOUT,
         )
         resp.raise_for_status()
-        typer.echo(resp.text)
+        data = resp.json()
+        file_count = data.get("file_count")
+        chunk_count = data.get("chunk_count")
+        failed_files = data.get("failed_files", [])
+        typer.echo(f"Indexed files: {file_count}")
+        typer.echo(f"Indexed chunks: {chunk_count}")
+        if failed_files:
+            typer.secho(f"Failed files: {len(failed_files)}", fg=typer.colors.YELLOW)
+            typer.echo(json.dumps(failed_files, indent=2, ensure_ascii=False))
+        else:
+            typer.echo("No failed files.")
     except Exception as e:
         typer.secho(f"Indexing failed: {e}", fg=typer.colors.RED)
 
