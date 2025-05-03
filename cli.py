@@ -117,7 +117,7 @@ def query(
 
 
 @app.command()
-def chat():
+def chat(debug: bool = typer.Option(False, "--debug", help="Show context chunks used for the answer.")):
     """Start an interactive chat session with your indexed notes."""
     typer.echo("Type your question and press Enter. Type 'exit' or 'quit' to end the session.\n")
     history = []
@@ -137,7 +137,7 @@ def chat():
                 break
             if not question.strip():
                 continue  # Ignore empty or whitespace-only input
-            payload = {"query": question}
+            payload = {"query": question, "debug": debug}
             with console.status("Thinking...", spinner="dots"):
                 resp = requests.post(
                     f"{WHISPER_NOTE_DAEMON_URL}/api/v1/query", json=payload, timeout=TIMEOUT
@@ -145,6 +145,7 @@ def chat():
                 resp.raise_for_status()
                 data = resp.json()
             answer = data.get("results", {}).get("answer")
+            context = data.get("results", {}).get("context")
             # Add a blank line before AI response
             console.print()
             if answer:
@@ -152,6 +153,37 @@ def chat():
                 console.print(panel)
             else:
                 console.print(Panel("No answer found in response.", border_style="yellow", title="AI", title_align="left"))
+            # Show context chunks if debug is enabled
+            if debug and context:
+                # Flatten all context chunks (including metadata lists) to a single counter
+                ctx_counter = 1
+                for chunk in context:
+                    meta_texts = []
+                    if isinstance(chunk, dict):
+                        metadata = chunk.get("metadata")
+                        if isinstance(metadata, dict):
+                            meta_texts.append(metadata.get("text"))
+                        elif isinstance(metadata, list):
+                            for meta in metadata:
+                                text = meta.get("text") if isinstance(meta, dict) else str(meta)
+                                meta_texts.append(text)
+                    if not meta_texts:
+                        # fallback to chunk.get('text') or str(chunk)
+                        meta_text = chunk.get("text") if isinstance(chunk, dict) else chunk
+                        meta_texts = [meta_text]
+                    for meta_text in meta_texts:
+                        if isinstance(meta_text, list):
+                            meta_text = "\n".join(str(x) for x in meta_text)
+                        elif meta_text is None:
+                            meta_text = "[empty]"
+                        panel = Panel(
+                            escape(str(meta_text)),
+                            title=f"Context {ctx_counter}",
+                            title_align="left",
+                            border_style="bright_magenta",
+                        )
+                        console.print(panel)
+                        ctx_counter += 1
         except (KeyboardInterrupt, EOFError):
             typer.echo("\nExiting chat.")
             return
