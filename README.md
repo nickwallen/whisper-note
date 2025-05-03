@@ -21,9 +21,17 @@ make run
 
 ### CLI
 
-```
-python cli.py index <directory>
-python cli.py query <question>
+#### Example Commands
+
+```sh
+# Index all .txt and .md files in a directory
+python cli.py index /path/to/notes --file-extensions .txt .md
+
+# Query your indexed notes
+python cli.py query "What did I work on last week?"
+
+# Show current index status (files, chunks, failed files)
+python cli.py status
 ```
 
 ### Daemon
