@@ -12,7 +12,7 @@ class DummyVectorStore:
     def __init__(self):
         self.queries = []
 
-    def query(self, embedding, max_results=5):
+    def query(self, embedding, max_results=5, **kwargs):
         # Return dummy results based on embedding length
         # For testing, just echo the embedding and max_results
         return {
@@ -49,7 +49,7 @@ def test_query_basic():
 
 def test_query_empty():
     class EmptyVectorStore(DummyVectorStore):
-        def query(self, embedding, max_results=5):
+        def query(self, embedding, max_results=5, **kwargs):
             return {"ids": [], "documents": [], "metadatas": [], "distances": []}
 
     engine = QueryEngine(
@@ -65,7 +65,7 @@ def test_query_empty():
 
 def test_query_handles_missing_fields():
     class PartialVectorStore(DummyVectorStore):
-        def query(self, embedding, max_results=2):
+        def query(self, embedding, max_results=2, **kwargs):
             return {"ids": ["a", "b"]}  # missing other fields
 
     engine = QueryEngine(
