@@ -12,6 +12,18 @@ TIMEOUT = 60  # seconds
 app = typer.Typer(help="Whisper Note: Index and query your files with AI.")
 
 
+def print_index_metrics(data):
+    file_count = data.get("file_count")
+    chunk_count = data.get("chunk_count")
+    failed_files = data.get("failed_files", [])
+    typer.echo(f"Indexed files: {file_count}")
+    typer.echo(f"Indexed chunks: {chunk_count}")
+    if failed_files:
+        typer.secho(f"Failed files: {len(failed_files)}", fg=typer.colors.YELLOW)
+        typer.echo(json.dumps(failed_files, indent=2, ensure_ascii=False))
+    else:
+        typer.echo("No failed files.")
+
 @app.command()
 def index(
     directory: Path = typer.Argument(
@@ -33,19 +45,21 @@ def index(
         )
         resp.raise_for_status()
         data = resp.json()
-        file_count = data.get("file_count")
-        chunk_count = data.get("chunk_count")
-        failed_files = data.get("failed_files", [])
-        typer.echo(f"Indexed files: {file_count}")
-        typer.echo(f"Indexed chunks: {chunk_count}")
-        if failed_files:
-            typer.secho(f"Failed files: {len(failed_files)}", fg=typer.colors.YELLOW)
-            typer.echo(json.dumps(failed_files, indent=2, ensure_ascii=False))
-        else:
-            typer.echo("No failed files.")
+        print_index_metrics(data)
     except Exception as e:
         typer.secho(f"Indexing failed: {e}", fg=typer.colors.RED)
 
+
+@app.command()
+def status():
+    """Show current index metrics (files, chunks, failed files)."""
+    try:
+        resp = requests.get(f"{WHISPER_NOTE_DAEMON_URL}/api/v1/index", timeout=TIMEOUT)
+        resp.raise_for_status()
+        data = resp.json()
+        print_index_metrics(data)
+    except Exception as e:
+        typer.secho(f"Failed to retrieve index status: {e}", fg=typer.colors.RED)
 
 @app.command()
 def query(
