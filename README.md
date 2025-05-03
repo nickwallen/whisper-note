@@ -12,6 +12,11 @@ By connecting directly to your daily notes, it lets you instantly generate conte
 
 No more manual sifting, no more copy-pasting. You get accurate, tailored updates in seconds, so you can focus on your real work—not on reporting it.
 
+**Note:**
+
+That's the vision, but we're far from that today. Consider the description above aspirational for now.
+
+
 ## Usage
 
 ### Setup
@@ -50,6 +55,7 @@ Type your question and press Enter. Type 'q' or 'Ctrl+C' to end the session.
 │ * Resolved devflow and integration branch merge issue.                                 │
 │ * Completed initial framing document and reviewed with stakeholders (MTTR Initiative). │
 ╰────────────────────────────────────────────────────────────────────────────────────────╯
+
 ```
 
 ## Ollama Installation
