@@ -1,13 +1,17 @@
 import chromadb
 from typing import List, Optional
 from dataclasses import dataclass, fields
+from datetime import datetime
 
 
 @dataclass
 class Metadata:
     file: str
     file_hash: str = ""
-    # Add other fields as needed
+    chunk_index: int = 0
+    text: str = ""
+    modified_at: datetime = datetime.fromtimestamp(0)
+    created_at: datetime = datetime.fromtimestamp(0)
 
 
 class VectorStore:
@@ -23,16 +27,23 @@ class VectorStore:
         """
         Return all metadata objects for the collection as a list of Metadata instances.
         Filters out any keys not present in the Metadata dataclass.
+        Converts created_at and modified_at from float (timestamp) to datetime.
         """
+        from datetime import datetime
+
         results = self.collection.get()
         metadatas = results.get("metadatas", [])
         metadata_fields = {f.name for f in fields(Metadata)}
         filtered = []
         for md in metadatas:
             if md:
-                filtered.append(
-                    Metadata(**{k: v for k, v in md.items() if k in metadata_fields})
-                )
+                d = {k: v for k, v in md.items() if k in metadata_fields}
+                # Convert timestamp floats to datetime
+                if "created_at" in d and isinstance(d["created_at"], (float, int)):
+                    d["created_at"] = datetime.fromtimestamp(d["created_at"])
+                if "modified_at" in d and isinstance(d["modified_at"], (float, int)):
+                    d["modified_at"] = datetime.fromtimestamp(d["modified_at"])
+                filtered.append(Metadata(**d))
         return filtered
 
     def delete_by_file_path(self, rel_path: str):
@@ -62,10 +73,22 @@ class VectorStore:
         ids: List of unique string IDs
         embeddings: List of embedding vectors (same length as ids)
         documents: List of chunk texts (same length as ids)
-        metadatas: List of metadata dicts (same length as ids, optional)
+        metadatas: List of Metadata objects (same length as ids, optional)
         """
+        # Convert Metadata dataclasses to dicts with float timestamps
+        meta_dicts = []
+        if metadatas:
+            for md in metadatas:
+                d = md.__dict__.copy()
+                if isinstance(d.get("modified_at"), datetime):
+                    d["modified_at"] = d["modified_at"].timestamp()
+                if isinstance(d.get("created_at"), datetime):
+                    d["created_at"] = d["created_at"].timestamp()
+                meta_dicts.append(d)
+        else:
+            meta_dicts = None
         self.collection.add(
-            ids=ids, embeddings=embeddings, documents=documents, metadatas=metadatas
+            ids=ids, embeddings=embeddings, documents=documents, metadatas=meta_dicts
         )
 
     def query(

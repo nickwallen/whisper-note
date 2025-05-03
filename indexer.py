@@ -5,7 +5,7 @@ from datetime import datetime
 from dataclasses import dataclass, field
 from embeddings import Embedder
 from chunker import Chunker
-from vector_store import VectorStore
+from vector_store import Metadata, VectorStore
 import hashlib
 
 
@@ -80,20 +80,28 @@ class Indexer:
             # Index file
             self.vector_store.delete_by_file_path(file_path)
             chunks = self.chunker.chunk_file(file_path)
-            embeddings = self.embedder.embed(chunks) if chunks else []
+            if not chunks:
+                return IndexerMetrics(file_count=1, chunk_count=0)
+
+            # Create embeddings for each chunk
+            embeddings = self.embedder.embed(chunks)
             ids, metadatas = [], []
             for i, chunk in enumerate(chunks):
                 ids.append(f"{file_hash}::chunk{i}")
                 metadatas.append(
-                    self._create_metadata(
-                        file_path, file_hash, i, chunk, self._get_mod_time(file_path)
+                    Metadata(
+                        file=file_path,
+                        file_hash=file_hash,
+                        chunk_index=i,
+                        text=chunk,
+                        modified_at=get_modified_at(file_path),
+                        created_at=get_created_at(file_path),
                     )
                 )
-            if ids:
-                self.vector_store.add(ids, embeddings, chunks, metadatas)
+            self.vector_store.add(ids, embeddings, chunks, metadatas)
             return IndexerMetrics(file_count=1, chunk_count=len(ids))
         except Exception as e:
-            logging.getLogger(__name__).debug(
+            logging.getLogger(__name__).error(
                 f"Failed to index file: {file_path}, error: {str(e)}"
             )
             return IndexerMetrics(
@@ -101,19 +109,6 @@ class Indexer:
                 chunk_count=0,
                 failed_files=[{"file": file_path, "error": str(e)}],
             )
-
-    def _create_metadata(self, file_path, file_hash, chunk_index, chunk, mod_time_iso):
-        return {
-            "file": file_path,
-            "file_hash": file_hash,
-            "chunk_index": chunk_index,
-            "text": chunk,
-            "modification_time": mod_time_iso,
-        }
-
-    def _get_mod_time(self, file_path):
-        mod_time = os.path.getmtime(file_path)
-        return datetime.fromtimestamp(mod_time).isoformat()
 
     def _find_files(
         self, directory: str, file_extensions: Optional[List[str]] = None
@@ -134,3 +129,11 @@ class Indexer:
     def _compute_file_hash(self, path):
         with open(path, "rb") as f:
             return hashlib.sha256(f.read()).hexdigest()
+
+
+def get_modified_at(file_path: str) -> datetime:
+    return datetime.fromtimestamp(os.path.getmtime(file_path))
+
+
+def get_created_at(file_path: str) -> datetime:
+    return datetime.fromtimestamp(os.path.getctime(file_path))

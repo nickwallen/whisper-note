@@ -2,11 +2,33 @@ import pytest
 from vector_store import VectorStore
 
 
+from vector_store import Metadata
+from datetime import datetime
+
+
 def test_add_and_query_vector_store():
     store = VectorStore(collection_name="test_notes")
     ids = ["doc1", "doc2"]
     embeddings = [[0.1, 0.2, 0.3], [0.4, 0.5, 0.6]]
-    metadatas = [{"file": "a.md"}, {"file": "b.md"}]
+    now = datetime.now()
+    metadatas = [
+        Metadata(
+            file="a.md",
+            file_hash="",
+            chunk_index=0,
+            text="doc1",
+            modified_at=now,
+            created_at=now,
+        ),
+        Metadata(
+            file="b.md",
+            file_hash="",
+            chunk_index=1,
+            text="doc2",
+            modified_at=now,
+            created_at=now,
+        ),
+    ]
     store.add(ids, embeddings, ["doc1", "doc2"], metadatas)
     results = store.query([0.1, 0.2, 0.3], max_results=1)
     assert "ids" in results
@@ -42,18 +64,30 @@ def test_add_mismatched_lengths():
 
 def test_duplicate_ids():
     store = VectorStore(collection_name="dup_test")
+    from vector_store import Metadata
+    from datetime import datetime
+
+    now = datetime.now()
+    meta = Metadata(
+        file="f.md",
+        file_hash="",
+        chunk_index=0,
+        text="doc",
+        modified_at=now,
+        created_at=now,
+    )
     store.add(
         ids=["dup"],
         embeddings=[[0.1, 0.2, 0.3]],
         documents=["doc"],
-        metadatas=[{"file": "f.md"}],
+        metadatas=[meta],
     )
     # Add duplicate id
     store.add(
         ids=["dup"],
         embeddings=[[0.1, 0.2, 0.3]],
         documents=["doc"],
-        metadatas=[{"file": "f.md"}],
+        metadatas=[meta],
     )
     # Should not error, but check only one result returned
     results = store.query([0.1, 0.2, 0.3], max_results=2)
@@ -66,9 +100,30 @@ def _setup_store_with_created_at():
     ids = ["doc1", "doc2", "doc3"]
     embeddings = [[0.1, 0.2, 0.3], [0.4, 0.5, 0.6], [0.7, 0.8, 0.9]]
     metadatas = [
-        {"file": "a.md", "created_at": 1643723400},
-        {"file": "b.md", "created_at": 1643723401},
-        {"file": "c.md", "created_at": 1643723402},
+        Metadata(
+            file="a.md",
+            file_hash="",
+            chunk_index=0,
+            text="doc1",
+            modified_at=datetime.fromtimestamp(1643723400),
+            created_at=datetime.fromtimestamp(1643723400),
+        ),
+        Metadata(
+            file="b.md",
+            file_hash="",
+            chunk_index=1,
+            text="doc2",
+            modified_at=datetime.fromtimestamp(1643723401),
+            created_at=datetime.fromtimestamp(1643723401),
+        ),
+        Metadata(
+            file="c.md",
+            file_hash="",
+            chunk_index=2,
+            text="doc3",
+            modified_at=datetime.fromtimestamp(1643723402),
+            created_at=datetime.fromtimestamp(1643723402),
+        ),
     ]
     store.add(ids, embeddings, ["doc1", "doc2", "doc3"], metadatas)
     return store
@@ -102,11 +157,23 @@ def test_query_with_start_and_end_time():
 
 def test_query_more_than_available():
     store = VectorStore(collection_name="more_than_avail")
+    from vector_store import Metadata
+    from datetime import datetime
+
+    now = datetime.now()
+    meta = Metadata(
+        file="f.md",
+        file_hash="",
+        chunk_index=0,
+        text="doc",
+        modified_at=now,
+        created_at=now,
+    )
     store.add(
         ids=["a"],
         embeddings=[[0.1, 0.2, 0.3]],
         documents=["doc"],
-        metadatas=[{"file": "f.md"}],
+        metadatas=[meta],
     )
     results = store.query([0.1, 0.2, 0.3], max_results=10)
     assert len(results["ids"][0]) == 1
@@ -114,17 +181,42 @@ def test_query_more_than_available():
 
 def test_delete_by_file_path():
     store = VectorStore(collection_name="delete_test")
+    from vector_store import Metadata
+    from datetime import datetime
+
+    now = datetime.now()
     # Add two vectors for the same file path but different hashes
     ids1 = ["hash1::chunk0", "hash1::chunk1"]
     ids2 = ["hash2::chunk0"]
     embeddings = [[0.1, 0.2, 0.3], [0.2, 0.3, 0.4]]
     embeddings2 = [[0.5, 0.6, 0.7]]
     metadatas1 = [
-        {"file": "foo.txt", "file_hash": "hash1", "chunk_index": 0, "text": "aaa"},
-        {"file": "foo.txt", "file_hash": "hash1", "chunk_index": 1, "text": "bbb"},
+        Metadata(
+            file="foo.txt",
+            file_hash="hash1",
+            chunk_index=0,
+            text="aaa",
+            modified_at=now,
+            created_at=now,
+        ),
+        Metadata(
+            file="foo.txt",
+            file_hash="hash1",
+            chunk_index=1,
+            text="bbb",
+            modified_at=now,
+            created_at=now,
+        ),
     ]
     metadatas2 = [
-        {"file": "foo.txt", "file_hash": "hash2", "chunk_index": 0, "text": "ccc"}
+        Metadata(
+            file="foo.txt",
+            file_hash="hash2",
+            chunk_index=0,
+            text="ccc",
+            modified_at=now,
+            created_at=now,
+        )
     ]
     store.add(ids1, embeddings, ["aaa", "bbb"], metadatas1)
     store.add(ids2, embeddings2, ["ccc"], metadatas2)
@@ -139,12 +231,30 @@ def test_delete_by_file_path():
 
 def test_reindex_overwrites_old_vectors():
     store = VectorStore(collection_name="reindex_test")
+    from vector_store import Metadata
+    from datetime import datetime
+
+    now = datetime.now()
     # Simulate first index
     ids1 = ["hashA::chunk0", "hashA::chunk1"]
     embeddings1 = [[0.1, 0.2, 0.3], [0.2, 0.3, 0.4]]
     metadatas1 = [
-        {"file": "bar.txt", "file_hash": "hashA", "chunk_index": 0, "text": "aaa"},
-        {"file": "bar.txt", "file_hash": "hashA", "chunk_index": 1, "text": "bbb"},
+        Metadata(
+            file="bar.txt",
+            file_hash="hashA",
+            chunk_index=0,
+            text="aaa",
+            modified_at=now,
+            created_at=now,
+        ),
+        Metadata(
+            file="bar.txt",
+            file_hash="hashA",
+            chunk_index=1,
+            text="bbb",
+            modified_at=now,
+            created_at=now,
+        ),
     ]
     store.add(ids1, embeddings1, ["aaa", "bbb"], metadatas1)
     # Simulate cleanup + reindex with new hash
@@ -152,7 +262,14 @@ def test_reindex_overwrites_old_vectors():
     ids2 = ["hashB::chunk0"]
     embeddings2 = [[0.5, 0.6, 0.7]]
     metadatas2 = [
-        {"file": "bar.txt", "file_hash": "hashB", "chunk_index": 0, "text": "ccc"}
+        Metadata(
+            file="bar.txt",
+            file_hash="hashB",
+            chunk_index=0,
+            text="ccc",
+            modified_at=now,
+            created_at=now,
+        )
     ]
     store.add(ids2, embeddings2, ["ccc"], metadatas2)
     # Only new vectors should be present

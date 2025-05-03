@@ -62,6 +62,9 @@ def index_directory(
         )
         return response
     except Exception as e:
+        logging.getLogger(__name__).error(
+            f"500 Internal Server Error: {e}\n{traceback.format_exc()}"
+        )
         return JSONResponse(
             status_code=500,
             content={"error": str(e)},
