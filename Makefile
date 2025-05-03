@@ -8,11 +8,11 @@ UVICORN=$(VENV)/bin/uvicorn
 default: install-dev format lint test
 
 install:
-	$(PIP) install -r requirements.txt
+	$(PIP) install -r requirements.txt -qq
 
 install-dev:
-	$(PIP) install -r requirements.txt
-	$(PIP) install -r requirements-dev.txt
+	$(PIP) install -r requirements.txt -qq
+	$(PIP) install -r requirements-dev.txt -qq
 
 run: 
 	$(UVICORN) api:app --reload --port 8000
