@@ -59,7 +59,6 @@ def test_get_index(temp_dir_with_files):
         "/api/v1/index",
         json={"directory": temp_dir_with_files, "file_extensions": [".txt"]},
     )
-    # Now test GET
     resp = client.get("/api/v1/index")
     assert resp.status_code == 200
     data = resp.json()
@@ -74,12 +73,10 @@ def test_query(temp_dir_with_files):
     collection = unique_collection()
     override_collection(collection)
     client = TestClient(app)
-    # Index first
     client.post(
         "/api/v1/index",
         json={"directory": temp_dir_with_files, "file_extensions": [".txt"]},
     )
-    # Query
     resp = client.post("/api/v1/query", json={"query": "What did Nick fix on Monday?"})
     assert resp.status_code == 200
     data = resp.json()

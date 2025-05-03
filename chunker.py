@@ -33,8 +33,7 @@ class Chunker:
         self.chunk_size = chunk_size
         self.overlap = overlap
         self.split_on = split_on
-        self.logger = logging.getLogger(__name__)
-        self.logger.debug(
+        logging.getLogger(__name__).debug(
             f"Initialized Chunker with chunk_size={chunk_size}, overlap={overlap}, split_on={split_on}"
         )
 
@@ -100,7 +99,7 @@ class Chunker:
             chunk = f"User note: title '{metadata.file_name}', created at '{created_at}', last modified at '{modified_at}': {text_segment}"
         else:
             chunk = text_segment
-        self.logger.debug(f"Created chunk: {chunk}")
+        logging.getLogger(__name__).debug(f"Created chunk: {chunk}")
         return chunk
 
     def _extract_metadata(self, file_path: str) -> FileMetadata:

@@ -47,8 +47,9 @@ class Indexer:
         file_exts: Optional list of file extensions to include (e.g., [".txt", ".md"])
         Returns: IndexerMetrics dataclass with indexing metrics.
         """
-        logger = logging.getLogger(__name__)
-        logger.debug(f"Indexing directory: {dir}, extensions: {file_exts}")
+        logging.getLogger(__name__).debug(
+            f"Indexing directory: {dir}, extensions: {file_exts}"
+        )
 
         metrics = IndexerMetrics(file_count=0, chunk_count=0, failed_files=[])
         files = self._find_files(dir, file_exts)
@@ -67,14 +68,13 @@ class Indexer:
         Index a single file. Returns IndexerMetrics for this file.
         Skips indexing if the file hash is already present.
         """
-        logger = logging.getLogger(__name__)
-        logger.debug(f"Indexing file: {file_path}")
+        logging.getLogger(__name__).debug(f"Indexing file: {file_path}")
 
         try:
             # Check if file is already indexed
             file_hash = self._compute_file_hash(file_path)
             if self.vector_store.is_file_hash_indexed(file_path, file_hash):
-                logger.debug(f"File already indexed: {file_path}")
+                logging.getLogger(__name__).debug(f"File already indexed: {file_path}")
                 return IndexerMetrics(file_count=0, chunk_count=0)
 
             # Index file
@@ -93,7 +93,9 @@ class Indexer:
                 self.vector_store.add(ids, embeddings, chunks, metadatas)
             return IndexerMetrics(file_count=1, chunk_count=len(ids))
         except Exception as e:
-            logger.debug(f"Failed to index file: {file_path}, error: {str(e)}")
+            logging.getLogger(__name__).debug(
+                f"Failed to index file: {file_path}, error: {str(e)}"
+            )
             return IndexerMetrics(
                 file_count=0,
                 chunk_count=0,
