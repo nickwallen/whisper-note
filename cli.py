@@ -135,6 +135,8 @@ def chat():
             if question.strip().lower() in {"exit", "quit"}:
                 typer.echo("Exiting chat.")
                 break
+            if not question.strip():
+                continue  # Ignore empty or whitespace-only input
             payload = {"query": question}
             with console.status("Thinking...", spinner="dots"):
                 resp = requests.post(
