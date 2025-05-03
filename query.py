@@ -108,7 +108,9 @@ class QueryEngine:
             )
             similar_context.append(chunk)
 
-        logging.getLogger(__name__).debug(f"Found {len(similar_context)} similar context chunks")
+        logging.getLogger(__name__).debug(
+            f"Found {len(similar_context)} similar context chunks"
+        )
         return similar_context
 
     @staticmethod

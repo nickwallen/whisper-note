@@ -142,4 +142,3 @@ def get_created_at(file_path: str) -> datetime:
     else:
         created = stat.st_ctime
     return datetime.fromtimestamp(created)
-

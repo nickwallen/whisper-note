@@ -4,7 +4,7 @@
 
 ## Never Dread Status Updates Again
 
-If you’re a developer or team member, chances are you spend too much time writing repetitive status updates—daily stand-ups, weekly team summaries, biweekly group reports. While these updates are essential for coordination and transparency, the process of preparing them is tedious, time-consuming, and often interrupts your flow.
+If you’re a developer, chances are you spend too much time writing repetitive status updates—daily stand-ups, weekly team summaries, biweekly group reports. While these updates are essential for coordination and transparency, the process of preparing them is tedious, time-consuming, and often interrupts your flow.
 
 **This app is built to eliminate that friction.**
 
@@ -18,6 +18,12 @@ No more manual sifting, no more copy-pasting. You get accurate, tailored updates
 
 ## Usage
 
+### Setup
+
+```
+make install
+```
+
 ### Start
 
 ```
@@ -27,46 +33,32 @@ make ollama
 make run
 ```
 
-### CLI
+### Usage
 
-#### Example Commands
 
+Index your notes.
 ```sh
-# Index all .txt and .md files in a directory
 python cli.py index /path/to/notes --file-extensions .txt .md
+```
 
-# Query your indexed notes
-python cli.py query "What did I work on last week?"
+Generate that update for stand-up.
+```
+$ python cli.py chat                                                      
+Type your question and press Enter. Type 'q' or 'Ctrl+C' to end the session.
 
-# Show current index status (files, chunks, failed files)
-python cli.py status
+> What did I work on yesterday?
 
-# Start an interactive chat session
-python cli.py chat
+╭─ AI ───────────────────────────────────────────────────────────────────────────────────╮
+│ * Split out frontend endpoints for improved clarity and maintainability.               │
+│ * Fixed authN/authZ issues across all routes.                                          │
+│ * Resolved devflow and integration branch merge issue.                                 │
+│ * Completed initial framing document and reviewed with stakeholders (MTTR Initiative). │
+╰────────────────────────────────────────────────────────────────────────────────────────╯
 ```
 
 ### Daemon
 
-#### Index
 
-```
-curl -s -X POST "http://localhost:8000/api/v1/index" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "directory": "/Users/nick.allen/Dropbox/Documents/Obsidian Vaults",
-    "file_extensions": [".txt", ".md"]
-  }' | jq
-```
-
-### Query
-
-```
-curl -s -X POST "http://localhost:8000/api/v1/query" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "query": "What did I get done last week?"
-  }' | jq
-```
 
 ## Plan
 
