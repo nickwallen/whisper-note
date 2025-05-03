@@ -73,8 +73,8 @@ class QueryEngine:
         self,
         query: str,
         max_results: int = 10,
-        start_time: Optional[float] = None,
-        end_time: Optional[float] = None,
+        start_time: Optional[datetime] = None,
+        end_time: Optional[datetime] = None,
     ) -> List[ContextChunk]:
         """
         Retrieve top matching context chunks for a single query.
@@ -82,18 +82,17 @@ class QueryEngine:
         If you want to support multi-query (batch queries), you must update this logic.
         """
         query_embedding = self.embedder.embed([query])[0]
-        results = self.vector_store.query(query_embedding, max_results=max_results)
+        results = self.vector_store.query(
+            query_embedding,
+            max_results=max_results,
+            start_time=start_time.timestamp() if start_time else None,
+            end_time=end_time.timestamp() if end_time else None,
+        )
 
         ids = self.get_first_list("ids", results)
-        documents = (
-            self.get_first_list("documents", results) if "documents" in results else []
-        )
-        metadatas = (
-            self.get_first_list("metadatas", results) if "metadatas" in results else []
-        )
-        distances = (
-            self.get_first_list("distances", results) if "distances" in results else []
-        )
+        documents = self.get_first_list("documents", results)
+        metadatas = self.get_first_list("metadatas", results)
+        distances = self.get_first_list("distances", results)
 
         similar_context = []
         for i in range(len(ids)):
@@ -105,9 +104,7 @@ class QueryEngine:
             )
             similar_context.append(chunk)
 
-        logging.getLogger(__name__).debug(
-            f"Found {len(similar_context)} similar context chunks: {similar_context}"
-        )
+        logging.getLogger(__name__).debug(f"Found {len(similar_context)} similar context chunks")
         return similar_context
 
     @staticmethod

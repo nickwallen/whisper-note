@@ -18,6 +18,7 @@ for mod in [
     "lang_model",
     "ollama",
     "query",
+    "time_range",
     "vector_store",
 ]:
     logging.getLogger(mod).setLevel(logging.DEBUG)

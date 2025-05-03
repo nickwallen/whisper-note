@@ -4,17 +4,19 @@ from datetime import datetime, timedelta
 import json
 import logging
 
+
 @dataclass
 class TimeRange:
     start: Optional[datetime]
     end: Optional[datetime]
 
+
 class TimeRangeExtractor:
     """
     Uses an LLM to determine if a user query is time-sensitive and extracts start/end dates if applicable.
     """
-    PROMPT_TEMPLATE = (
-        """
+
+    PROMPT_TEMPLATE = """
         Given the following user question, determine whether it has a time-sensitive component. If it does, return the start
         and end date that the question refers to in ISO 8601 format (YYYY-MM-DD). If the question is not time-sensitive,
         return null for both.
@@ -35,7 +37,6 @@ class TimeRangeExtractor:
         For example, if the user's question is "What did I do yesterday?", return {{ "start": "{yesterday}", "end": "{today}" }}.
         User question: "{query}"
         """
-    )
 
     def __init__(self, lang_model):
         self.lang_model = lang_model
@@ -43,7 +44,9 @@ class TimeRangeExtractor:
     def extract(self, query: str) -> TimeRange:
         today = datetime.now().strftime("%Y-%m-%d")
         yesterday = (datetime.now() - timedelta(days=1)).strftime("%Y-%m-%d")
-        prompt = self.PROMPT_TEMPLATE.format(today=today, yesterday=yesterday, query=query)
+        prompt = self.PROMPT_TEMPLATE.format(
+            today=today, yesterday=yesterday, query=query
+        )
         response = self.lang_model.generate(prompt)
         try:
             data = json.loads(response)
@@ -71,5 +74,3 @@ class TimeRangeExtractor:
                 f"Failed to parse date string: {date_str}, error: {str(e)}"
             )
             return None
-
-
