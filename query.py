@@ -48,10 +48,12 @@ class QueryEngine:
             self.ensure_str(chunk.text) for chunk in similar_context if chunk.text
         ]
         context_texts.append(self._current_date_context())
-        context = "\n".join(context_texts)
+        context = "\n\n".join(context_texts)
         if not prompt_template:
             prompt_template = (
-                "Answer the following question. The provided context includes the daily notes from the user.\n"
+                "Answer the following question using only the information in the "
+                "context. Respond directly and do not reference the context by saying "
+                "something like ' Based on the information provided in the context...'.\n"
                 "Context:\n{context}\n\nQuestion: {query}\nAnswer:"
             )
         prompt = prompt_template.format(context=context, query=query_string)
