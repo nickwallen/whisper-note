@@ -1,8 +1,12 @@
+from rich.table import Table
+from rich.console import Console
 import typer
-from typing import List, Optional
+from typing import List
 from pathlib import Path
 import requests
-import json
+from rich.panel import Panel
+from rich.markup import escape
+from api import QueryResponse, ContextChunk, IndexMetricsResponse
 
 WHISPER_NOTE_DAEMON_URL = (
     "http://localhost:8000"  # Change this if your server runs elsewhere
@@ -12,40 +16,12 @@ TIMEOUT = 60  # seconds
 app = typer.Typer(help="Whisper Note: Index and query your files with AI.")
 
 
-from rich.table import Table
-from rich.console import Console
-
-def print_index_metrics(data):
-    file_count = data.get("file_count")
-    chunk_count = data.get("chunk_count")
-    failed_files = data.get("failed_files", [])
-    console = Console()
-
-    # Main metrics table
-    metrics_table = Table(show_header=True, header_style="bold magenta")
-    metrics_table.add_column("Metric", style="dim")
-    metrics_table.add_column("Value", style="bold")
-    metrics_table.add_row("Indexed files", str(file_count))
-    metrics_table.add_row("Indexed chunks", str(chunk_count))
-    metrics_table.add_row("Failed files", str(len(failed_files)))
-    console.print(metrics_table)
-
-    # Failed files table (if any)
-    if failed_files:
-        failed_table = Table(show_header=True, header_style="bold red")
-        # Show all keys from first failed file as columns if possible
-        if isinstance(failed_files, list) and failed_files and isinstance(failed_files[0], dict):
-            for key in failed_files[0].keys():
-                failed_table.add_column(str(key))
-            for entry in failed_files:
-                failed_table.add_row(*(str(entry.get(k, "")) for k in failed_files[0].keys()))
-        else:
-            failed_table.add_column("Failed File")
-            for entry in failed_files:
-                failed_table.add_row(str(entry))
-        console.print(failed_table)
-
-@app.command()
+@app.command(
+    name="index",
+    help="Index a directory of files.",
+    short_help="Index a directory.",
+    rich_help_panel="Commands",
+)
 def index(
     directory: Path = typer.Argument(
         ..., exists=True, file_okay=False, dir_okay=True, help="Directory to index."
@@ -54,141 +30,187 @@ def index(
         [".txt", ".md"], help="File extensions to include."
     ),
 ):
-    """Index a directory with specified file extensions."""
+    console = Console()
     try:
-        resp = requests.post(
-            f"{WHISPER_NOTE_DAEMON_URL}/api/v1/index",
-            json={
-                "directory": str(directory),
-                "file_extensions": file_extensions,
-            },
-            timeout=TIMEOUT,
-        )
-        resp.raise_for_status()
-        data = resp.json()
-        print_index_metrics(data)
+        metrics = submit_post_index(str(directory), file_extensions)
+        view = show_index_metrics(metrics)
+        console.print(view)
     except Exception as e:
-        typer.secho(f"Indexing failed: {e}", fg=typer.colors.RED)
+        console.print(f"[red]Indexing failed: {e}[/red]")
 
 
-@app.command()
+@app.command(
+    name="status",
+    help="Show current status of the index.",
+    short_help="Show index status.",
+    rich_help_panel="Commands",
+)
 def status():
-    """Show current index metrics (files, chunks, failed files)."""
+    console = Console()
     try:
-        resp = requests.get(f"{WHISPER_NOTE_DAEMON_URL}/api/v1/index", timeout=TIMEOUT)
-        resp.raise_for_status()
-        data = resp.json()
-        print_index_metrics(data)
+        metrics = submit_get_index()
+        view = show_index_metrics(metrics)
+        console.print(view)
     except Exception as e:
-        typer.secho(f"Failed to retrieve index status: {e}", fg=typer.colors.RED)
+        console.print(f"[red]Failed to retrieve index status: {e}[/red]")
 
-@app.command()
+
+@app.command(
+    name="query",
+    help="Ask the AI a question.",
+    short_help="Ask the AI a question.",
+    rich_help_panel="Commands",
+)
 def query(
     question: str = typer.Argument(..., help="Your question to ask the AI."),
-    scope: Optional[Path] = typer.Option(
-        None, help="Restrict search to a file or directory."
-    ),
     debug: bool = typer.Option(
         False, "--debug", help="Show context along with the answer."
     ),
 ):
-    """Ask a question about your indexed files."""
+    console = Console()
     try:
         payload = {"query": question}
-        if scope:
-            payload["scope"] = str(scope)
-        resp = requests.post(
-            f"{WHISPER_NOTE_DAEMON_URL}/api/v1/query", json=payload, timeout=TIMEOUT
-        )
-        resp.raise_for_status()
-        data = resp.json()
-        answer = data.get("results", {}).get("answer")
-        context = data.get("results", {}).get("context")
-        if answer:
-            typer.echo("Answer:\n" + answer)
-            if debug and context:
-                typer.echo(
-                    "\nContext:\n" + json.dumps(context, indent=2, ensure_ascii=False)
-                )
-        else:
-            typer.secho("No answer found in response.", fg=typer.colors.YELLOW)
+        resp = submit_post_query(payload)
+        if not resp.answer:
+            console.print("[yellow]No answer found in response.[/yellow]")
+            return
+        view = show_answer(resp.answer)
+        console.print(view)
+        if debug and resp.context:
+            for panel in show_context(resp.context):
+                console.print(panel)
     except Exception as e:
-        typer.secho(f"Query failed: {e}", fg=typer.colors.RED)
+        console.print(f"[red]Query failed: {e}[/red]")
 
 
-@app.command()
-def chat(debug: bool = typer.Option(False, "--debug", help="Show context chunks used for the answer.")):
-    """Start an interactive chat session with your indexed notes."""
-    typer.echo("Type your question and press Enter. Type 'exit' or 'quit' to end the session.\n")
-    history = []
+@app.command(
+    name="chat",
+    help="Ask questions in an interactive session.",
+    short_help="Ask questions in an interactive session.",
+    rich_help_panel="Commands",
+)
+def chat(
+    debug: bool = typer.Option(
+        False, "--debug", help="Show context chunks used for the answer."
+    )
+):
+    console = Console()
+    console.print(
+        "Type your question and press Enter. Type 'q' or 'Ctrl+C' to end the session.\n"
+    )
     while True:
         try:
-            from rich.console import Console
-            from rich.panel import Panel
-            from rich.markup import escape
-            console = Console()
             try:
                 question = console.input("[bold green]> [/bold green]")
             except EOFError:
-                typer.echo("\nExiting chat.")
+                console.print("\nExiting chat.")
                 return
-            if question.strip().lower() in {"exit", "quit"}:
-                typer.echo("Exiting chat.")
+            if question.strip().lower() in {"q", "quit"}:
+                console.print("Exiting chat.")
                 break
             if not question.strip():
                 continue  # Ignore empty or whitespace-only input
-            payload = {"query": question, "debug": debug}
+
+            # Submit query
             with console.status("Thinking...", spinner="dots"):
-                resp = requests.post(
-                    f"{WHISPER_NOTE_DAEMON_URL}/api/v1/query", json=payload, timeout=TIMEOUT
-                )
-                resp.raise_for_status()
-                data = resp.json()
-            answer = data.get("results", {}).get("answer")
-            context = data.get("results", {}).get("context")
-            # Add a blank line before AI response
+                resp = submit_post_query({"query": question, "debug": debug})
+
+            # Show answer
             console.print()
-            if answer:
-                panel = Panel(escape(answer), title="AI", title_align="left", border_style="bright_cyan")
-                console.print(panel)
+            if resp.answer:
+                console.print(show_answer(resp.answer))
             else:
-                console.print(Panel("No answer found in response.", border_style="yellow", title="AI", title_align="left"))
-            # Show context chunks if debug is enabled
-            if debug and context:
-                # Flatten all context chunks (including metadata lists) to a single counter
-                ctx_counter = 1
-                for chunk in context:
-                    meta_texts = []
-                    if isinstance(chunk, dict):
-                        metadata = chunk.get("metadata")
-                        if isinstance(metadata, dict):
-                            meta_texts.append(metadata.get("text"))
-                        elif isinstance(metadata, list):
-                            for meta in metadata:
-                                text = meta.get("text") if isinstance(meta, dict) else str(meta)
-                                meta_texts.append(text)
-                    if not meta_texts:
-                        # fallback to chunk.get('text') or str(chunk)
-                        meta_text = chunk.get("text") if isinstance(chunk, dict) else chunk
-                        meta_texts = [meta_text]
-                    for meta_text in meta_texts:
-                        if isinstance(meta_text, list):
-                            meta_text = "\n".join(str(x) for x in meta_text)
-                        elif meta_text is None:
-                            meta_text = "[empty]"
-                        panel = Panel(
-                            escape(str(meta_text)),
-                            title=f"Context {ctx_counter}",
-                            title_align="left",
-                            border_style="bright_magenta",
-                        )
-                        console.print(panel)
-                        ctx_counter += 1
+                console.print(no_answer_found())
+
+            # Show context if debug is enabled
+            if debug and resp.context:
+                for panel in show_context(resp.context):
+                    console.print(panel)
+            console.print()
+
         except (KeyboardInterrupt, EOFError):
-            typer.echo("\nExiting chat.")
+            console.print("\nExiting chat.")
             return
         except Exception as e:
-            typer.secho(f"Query failed: {e}", fg=typer.colors.RED)
+            console.print(f"[red]Query failed: {e}[/red]")
+
+
+def show_index_metrics(metrics: IndexMetricsResponse) -> Table:
+    """Return a Table displaying index metrics."""
+    metrics_table = Table(show_header=True, header_style="bold magenta")
+    metrics_table.add_column("Metric", style="dim")
+    metrics_table.add_column("Value", style="bold")
+    metrics_table.add_row("Indexed files", str(metrics.file_count))
+    metrics_table.add_row("Indexed chunks", str(metrics.chunk_count))
+    metrics_table.add_row("Failed files", str(len(metrics.failed_files)))
+    return metrics_table
+
+
+def show_context(context: List[ContextChunk]) -> List[Panel]:
+    """Return a list of Panels for the relevant context provided to the lang model."""
+    panels = []
+    for idx, chunk in enumerate(context, start=1):
+        meta_text = chunk.text if chunk.text is not None else "[empty]"
+        panel = Panel(
+            escape(str(meta_text)),
+            title=f"Context {idx}",
+            title_align="left",
+            border_style="bright_magenta",
+        )
+        panels.append(panel)
+    return panels
+
+
+def no_answer_found() -> Panel:
+    """Return a panel indicating that no answer was found."""
+    return Panel(
+        "No answer found in response.",
+        border_style="yellow",
+        title="AI",
+        title_align="left",
+    )
+
+
+def show_answer(answer: str) -> Panel:
+    """Return the Panel for the answer provided by the lang model."""
+    return Panel(
+        escape(answer),
+        title="AI",
+        title_align="left",
+        border_style="bright_cyan",
+    )
+
+
+def submit_post_query(payload: dict) -> QueryResponse:
+    resp = requests.post(
+        f"{WHISPER_NOTE_DAEMON_URL}/api/v1/query",
+        json=payload,
+        timeout=TIMEOUT,
+    )
+    resp.raise_for_status()
+    return QueryResponse(**resp.json())
+
+
+def submit_get_index() -> IndexMetricsResponse:
+    resp = requests.get(f"{WHISPER_NOTE_DAEMON_URL}/api/v1/index", timeout=TIMEOUT)
+    resp.raise_for_status()
+    return IndexMetricsResponse(**resp.json())
+
+
+def submit_post_index(
+    directory: str, file_extensions: list[str]
+) -> IndexMetricsResponse:
+    resp = requests.post(
+        f"{WHISPER_NOTE_DAEMON_URL}/api/v1/index",
+        json={
+            "directory": directory,
+            "file_extensions": file_extensions,
+        },
+        timeout=TIMEOUT,
+    )
+    resp.raise_for_status()
+    return IndexMetricsResponse(**resp.json())
+
 
 if __name__ == "__main__":
     app()

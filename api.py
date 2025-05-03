@@ -3,8 +3,7 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from typing import List, Optional
 from indexer import Indexer, IndexerMetrics
-from fastapi.encoders import jsonable_encoder
-from query import QueryEngine
+from query import ContextChunk, QueryEngine
 from vector_store import VectorStore
 import traceback
 import logging
@@ -65,7 +64,7 @@ def index_directory(
     except Exception as e:
         return JSONResponse(
             status_code=500,
-            content={"error": str(e), "traceback": traceback.format_exc()},
+            content={"error": str(e)},
         )
 
 
@@ -82,22 +81,34 @@ def get_index(collection_name: str = Depends(get_collection_name)):
         metrics = build_indexer_metrics_from_metadata(metadata)
         return metrics
     except Exception as e:
+        logging.getLogger(__name__).error(
+            f"500 Internal Server Error: {e}\n{traceback.format_exc()}"
+        )
         return JSONResponse(
             status_code=500,
-            content={"error": str(e), "traceback": traceback.format_exc()},
+            content={"error": str(e)},
         )
 
 
-@app.post("/api/v1/query")
+class QueryResponse(BaseModel):
+    answer: str
+    context: List[ContextChunk]
+
+
+@app.post("/api/v1/query", response_model=QueryResponse)
 def query(request: QueryRequest, collection_name: str = Depends(get_collection_name)):
     try:
         engine = QueryEngine(vector_store=VectorStore(collection_name=collection_name))
         result = engine.query(request.query, n_results=10)
-        return JSONResponse(content={"results": jsonable_encoder(result)})
+        resp = QueryResponse(answer=result.answer, context=result.context)
+        return resp
     except Exception as e:
+        logging.getLogger(__name__).error(
+            f"500 Internal Server Error: {e}\n{traceback.format_exc()}"
+        )
         return JSONResponse(
             status_code=500,
-            content={"error": str(e), "traceback": traceback.format_exc()},
+            content={"error": str(e)},
         )
 
 

@@ -58,30 +58,44 @@ class QueryEngine:
             )
         prompt = prompt_template.format(context=context, query=query_string)
 
-        logger = logging.getLogger(__name__)
-        logger.debug(f"Built prompt: {prompt}")
+        logging.getLogger(__name__).debug(f"Built prompt: {prompt}")
         return prompt
 
     def _find_similar_context(
         self, query: str, max_results: int = 10
     ) -> List[ContextChunk]:
+        """
+        Retrieve top matching context chunks for a single query.
+        NOTE: This implementation only supports single-query (one embedding at a time).
+        If you want to support multi-query (batch queries), you must update this logic.
+        """
         query_embedding = self.embedder.embed([query])[0]
         results = self.vector_store.query(query_embedding, n_results=max_results)
-        logger = logging.getLogger(__name__)
-        logger.debug(f"ChromaDB raw results: {results}")
+        logging.getLogger(__name__).debug(f"ChromaDB raw results: {results}")
+
+        # ChromaDB returns lists of lists for multi-query; we only support single-query.
+        def get_first_list(key):
+            val = results.get(key, [])
+            if isinstance(val, list) and len(val) > 0 and isinstance(val[0], list):
+                return val[0]
+            return val
+
+        ids = get_first_list("ids")
+        documents = get_first_list("documents") if "documents" in results else []
+        metadatas = get_first_list("metadatas") if "metadatas" in results else []
+        distances = get_first_list("distances") if "distances" in results else []
 
         similar_context = []
-        for i in range(len(results["ids"])):
+        for i in range(len(ids)):
             chunk = ContextChunk(
-                id=results["ids"][i],
-                text=results["documents"][i] if "documents" in results else None,
-                metadata=results["metadatas"][i] if "metadatas" in results else None,
-                distance=results["distances"][i] if "distances" in results else None,
+                id=ids[i],
+                text=documents[i] if i < len(documents) else None,
+                metadata=metadatas[i] if i < len(metadatas) else None,
+                distance=distances[i] if i < len(distances) else None,
             )
             similar_context.append(chunk)
 
-        logger = logging.getLogger(__name__)
-        logger.debug(
+        logging.getLogger(__name__).debug(
             f"Found {len(similar_context)} similar context chunks: {similar_context}"
         )
         return similar_context

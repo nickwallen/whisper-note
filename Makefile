@@ -21,10 +21,10 @@ format:
 	black .
 
 lint:
-	ruff check .
+	ruff check . --fix
 
 test:
-	$(VENV)/bin/pytest
+	$(VENV)/bin/pytest -x
 
 test-unit:
 	$(VENV)/bin/pytest -m "not integration"

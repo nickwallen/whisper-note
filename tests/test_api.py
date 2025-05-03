@@ -80,6 +80,6 @@ def test_query(temp_dir_with_files):
     resp = client.post("/api/v1/query", json={"query": "What did Nick fix on Monday?"})
     assert resp.status_code == 200
     data = resp.json()
-    answer = data["results"]["answer"]
+    answer = data["answer"]
     assert "login bug" in answer.lower() or "fixed" in answer.lower()
     clear_override()
