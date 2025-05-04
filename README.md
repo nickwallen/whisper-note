@@ -14,6 +14,10 @@ No more manual sifting, no more copy-pasting. You get accurate, tailored updates
 
 **Note:** That's the vision, but we're far from that today. Consider the description above aspirational for now.
 
+## 📚 What is whisper-note?
+
+whisper-note is a personal, privacy-focused application that uses a Retrieval-Augmented Generation (RAG) approach to generate clear summaries of your work activity from natural language queries. It combines semantic search, time-aware filtering, and creative prompting to provide accurate and relevant responses based on your own notes.
+
 
 ## 🛠️ Setup
 
@@ -66,7 +70,7 @@ Type your question and press Enter. Type 'q' or 'Ctrl+C' to end the session.
 
 ## 🛠️ Technical Architecture
 
-**whisper-note** is a personal, privacy-focused application that uses a Retrieval-Augmented Generation (RAG) approach to generate clear summaries of your work activity from natural language queries. It combines semantic search, time-aware filtering, and creative prompting to provide accurate and relevant responses based on your own notes.
+whisper-note uses a Retrieval-Augmented Generation (RAG) approach to generate clear summaries of your work activity from natural language queries. It combines semantic search, time-aware filtering, and creative prompting to provide accurate and relevant responses based on your own notes.
 
 ### Workflows
 
