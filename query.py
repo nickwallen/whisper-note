@@ -24,13 +24,31 @@ class QueryResult:
 
 
 class QueryEngine:
+
+    PROMPT_TEMPLATE = (
+        "Given the following context and question, generate a helpful response to the user's question.\n"
+        "\n"
+        "Instructions:\n"
+        "- Only include work that the user personally completed, led, or contributed to.\n"
+        "- Ignore information about other people unless it directly relates to the user's own work or deliverables.\n"
+        "- Ignore notes that are procedural, instructional, or reference material (e.g., how-to guides, meeting agendas, copied documentation, or class notes). Do not include these as completed tasks.\n"
+        "- If unsure whether an item is a completed task, omit it.\n"
+        "- Begin your answer with a single, concise sentence that states the time period the summary covers (e.g., 'On Friday, May 1st, you...').\n"
+        "- Include all relevant information as a concise, high-level bulleted list. **Do not include any additional paragraphs, commentary, or summaries outside of the bulleted list and the opening sentence.**\n"
+        "- Each bullet should represent a completed task or high-level accomplishment. If you attended a class or training, summarize it as a single bullet (e.g., 'Attended Workspaces 101 class').\n"
+        "- Be brief and avoid unnecessary details or repetition.\n"
+        "- Do not reference the context or say things like 'Based on the information provided...'.\n"
+        "\n"
+        "Context:\n{context}\n\nQuestion: {query}\nAnswer:"
+    )
+
     def __init__(self, embedder=None, vector_store=None, lang_model: LangModel = None):
         self.embedder = embedder or Embedder()
         self.vector_store = vector_store or VectorStore()
         self.lang_model = lang_model or OllamaLangModel()
         self.time_range_extractor = TimeRangeExtractor(lang_model=self.lang_model)
 
-    def query(self, query_string, max_results=10, prompt_template=None) -> QueryResult:
+    def query(self, query_string, max_results=10, prompt_template=PROMPT_TEMPLATE) -> QueryResult:
         """
         Retrieve top matching chunks and use LangModel to answer the query using those chunks as context.
         Returns a QueryResult with the answer and the context used.
@@ -50,26 +68,20 @@ class QueryEngine:
         self,
         query_string: str,
         similar_context: List[ContextChunk],
-        prompt_template: str = None,
+        prompt_template: str = PROMPT_TEMPLATE,
     ) -> str:
         context_texts = [
             self.ensure_str(chunk.text) for chunk in similar_context if chunk.text
         ]
         context_texts.append(self._current_date_context())
         context = "\n\n".join(context_texts)
-        if not prompt_template:
-            prompt_template = (
-                "Answer the following question using only the information in the "
-                "context. Respond directly and do not reference the context by saying "
-                "something like ' Based on the information provided in the context...'.\n"
-                "Context:\n{context}\n\nQuestion: {query}\nAnswer:"
-            )
         prompt = prompt_template.format(context=context, query=query_string)
 
         logger = logging.getLogger(__name__)
         if logger.isEnabledFor(logging.DEBUG):
             logger.debug(f"Built prompt: {self._format_log_message(prompt)}")
         return prompt
+
 
     def _find_similar_context(
         self,
