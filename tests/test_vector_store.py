@@ -131,7 +131,7 @@ def _setup_store_with_created_at():
 
 def test_query_with_start_time():
     store = _setup_store_with_created_at()
-    results = store.query([0.1, 0.2, 0.3], max_results=3, start_time=1643723401)
+    results = store.query([0.1, 0.2, 0.3], start_time=1643723401)
     assert "ids" in results
     # Should get doc2 and doc3
     assert set(results["ids"][0]) == {"doc2", "doc3"}
@@ -139,7 +139,7 @@ def test_query_with_start_time():
 
 def test_query_with_end_time():
     store = _setup_store_with_created_at()
-    results = store.query([0.1, 0.2, 0.3], max_results=3, end_time=1643723401)
+    results = store.query([0.1, 0.2, 0.3], end_time=1643723401)
     assert "ids" in results
     # Should get doc1 and doc2
     assert set(results["ids"][0]) == {"doc1", "doc2"}
@@ -147,9 +147,7 @@ def test_query_with_end_time():
 
 def test_query_with_start_and_end_time():
     store = _setup_store_with_created_at()
-    results = store.query(
-        [0.1, 0.2, 0.3], max_results=3, start_time=1643723401, end_time=1643723401
-    )
+    results = store.query([0.1, 0.2, 0.3], start_time=1643723401, end_time=1643723401)
     assert "ids" in results
     # Should get only doc2
     assert set(results["ids"][0]) == {"doc2"}

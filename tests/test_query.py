@@ -33,8 +33,9 @@ def test_query_basic():
         embedder=DummyEmbedder(),
         vector_store=DummyVectorStore(),
         lang_model=DummyLangModel(),
+        max_context=3,  # Set to match the expected result
     )
-    actual = engine.query("test", max_results=3)
+    actual = engine.query("test")
     expected = QueryResult(
         answer="dummy answer",
         context=[
@@ -56,8 +57,9 @@ def test_query_empty():
         embedder=DummyEmbedder(),
         vector_store=EmptyVectorStore(),
         lang_model=DummyLangModel(),
+        max_context=5,
     )
-    actual = engine.query("", max_results=5)
+    actual = engine.query("")
     expected = QueryResult(answer="dummy answer", context=[])
     assert actual == expected
     assert actual.answer
@@ -72,8 +74,9 @@ def test_query_handles_missing_fields():
         embedder=DummyEmbedder(),
         vector_store=PartialVectorStore(),
         lang_model=DummyLangModel(),
+        max_context=2,
     )
-    actual = engine.query("foo", max_results=2)
+    actual = engine.query("foo")
     expected = QueryResult(
         answer="dummy answer",
         context=[

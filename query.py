@@ -25,34 +25,22 @@ class QueryResult:
 class QueryEngine:
     """Query engine generates a helpful response for user queries."""
 
-    PROMPT_TEMPLATE = (
-        "Given the following context and question, generate a helpful response to the user's question.\n"
-        "\n"
-        "Instructions:\n"
-        "- Only include work that the user personally completed, led, or contributed to.\n"
-        "- Ignore information about other people unless it directly relates to the user's own work or deliverables.\n"
-        "- Ignore notes that are procedural, instructional, or reference material (e.g., how-to guides, meeting agendas, copied documentation, or class notes). Do not include these as completed tasks.\n"
-        "- If unsure whether an item is a completed task, omit it.\n"
-        "- Begin your answer with a single, concise sentence that states the time period the summary covers (e.g., 'On Friday, May 1st, you...').\n"
-        "- Include all relevant information as a concise, high-level bulleted list. **Do not include any additional paragraphs, commentary, or summaries outside of the bulleted list and the opening sentence.**\n"
-        "- Each bullet should represent a completed task or high-level accomplishment. If you attended a class or training, summarize it as a single bullet (e.g., 'Attended Workspaces 101 class').\n"
-        "- Be brief and avoid unnecessary details or repetition.\n"
-        "- Do not reference the context or say things like 'Based on the information provided...'.\n"
-        "- Today's date is {today}.\n"
-        "\n"
-        "Context:\n{context}\n\nQuestion: {query}\nAnswer:"
-    )
-
-    def __init__(self, embedder=None, vector_store=None, lang_model: LangModel = None, with_time_aware_filtering: bool = True):
+    def __init__(
+        self,
+        embedder=None,
+        vector_store=None,
+        lang_model: LangModel = None,
+        max_context: int = 10,
+        with_time_aware_filtering: bool = True,
+    ):
         self.embedder = embedder or Embedder()
         self.vector_store = vector_store or VectorStore()
         self.lang_model = lang_model or OllamaLangModel()
         self.time_range_extractor = TimeRangeExtractor(lang_model=self.lang_model)
         self.with_time_aware_filtering = with_time_aware_filtering
+        self.max_context = max_context
 
-    def query(
-        self, query_string, max_results=10, prompt_template=PROMPT_TEMPLATE
-    ) -> QueryResult:
+    def query(self, query_string: str) -> QueryResult:
         """
         Retrieve top matching chunks and use LangModel to answer the query using those chunks as context.
         Returns a QueryResult with the answer and the context used.
@@ -62,19 +50,16 @@ class QueryEngine:
             time_range = self.time_range_extractor.extract(query_string)
         context = self._find_similar_context(
             query_string,
-            max_results=max_results,
+            max_results=self.max_context,
             start_time=time_range.start if time_range else None,
             end_time=time_range.end if time_range else None,
         )
-        prompt = self._build_prompt(query_string, context, prompt_template)
+        prompt = self._build_prompt(query_string, context)
         answer = self.lang_model.generate(prompt)
         return QueryResult(answer=answer, context=context)
 
     def _build_prompt(
-        self,
-        query_string: str,
-        similar_context: List[ContextChunk],
-        prompt_template: str = PROMPT_TEMPLATE,
+        self, query_string: str, similar_context: List[ContextChunk]
     ) -> str:
         """Build a prompt for the LLM to generate a response."""
         context_texts = [
@@ -82,7 +67,7 @@ class QueryEngine:
         ]
         context = "\n\n".join(context_texts)
         today = datetime.now().strftime("%A, %B %d, %Y")
-        prompt = prompt_template.format(
+        prompt = self.PROMPT_TEMPLATE.format(
             context=context, query=query_string, today=today
         )
 
@@ -165,3 +150,21 @@ class QueryEngine:
         return single_line[:max_length] + (
             "..." if len(single_line) > max_length else ""
         )
+
+    PROMPT_TEMPLATE = (
+        "Given the following context and question, generate a helpful response to the user's question.\n"
+        "\n"
+        "Instructions:\n"
+        "- Only include work that the user personally completed, led, or contributed to.\n"
+        "- Ignore information about other people unless it directly relates to the user's own work or deliverables.\n"
+        "- Ignore notes that are procedural, instructional, or reference material (e.g., how-to guides, meeting agendas, copied documentation, or class notes). Do not include these as completed tasks.\n"
+        "- If unsure whether an item is a completed task, omit it.\n"
+        "- Begin your answer with a single, concise sentence that states the time period the summary covers (e.g., 'On Friday, May 1st, you...').\n"
+        "- Include all relevant information as a concise, high-level bulleted list. **Do not include any additional paragraphs, commentary, or summaries outside of the bulleted list and the opening sentence.**\n"
+        "- Each bullet should represent a completed task or high-level accomplishment. If you attended a class or training, summarize it as a single bullet (e.g., 'Attended Workspaces 101 class').\n"
+        "- Be brief and avoid unnecessary details or repetition.\n"
+        "- Do not reference the context or say things like 'Based on the information provided...'.\n"
+        "- Today's date is {today}.\n"
+        "\n"
+        "Context:\n{context}\n\nQuestion: {query}\nAnswer:"
+    )
