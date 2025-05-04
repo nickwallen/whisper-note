@@ -28,9 +28,6 @@ make install
 ### Start
 
 ```
-make ollama
-```
-```
 make run
 ```
 
@@ -53,7 +50,7 @@ Type your question and press Enter. Type 'q' or 'Ctrl+C' to end the session.
 │ * Split out frontend endpoints for improved clarity and maintainability.               │
 │ * Fixed authN/authZ issues across all routes.                                          │
 │ * Resolved devflow and integration branch merge issue.                                 │
-│ * Completed initial framing document and reviewed with stakeholders (MTTR Initiative). │
+│ * Completed MTTR initial framing document and reviewed with stakeholders.              │
 ╰────────────────────────────────────────────────────────────────────────────────────────╯
 
 ```

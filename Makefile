@@ -14,8 +14,13 @@ install-dev:
 	$(PIP) install -r requirements.txt -qq
 	$(PIP) install -r requirements-dev.txt -qq
 
-run: 
-	$(UVICORN) api:app --reload --port 8000
+run:
+	@mkdir -p logs; \
+	( \
+		set -m; \
+		ollama serve > logs/ollama.log 2>&1 & \
+		$(UVICORN) api:app --reload --port 8000 | tee logs/whisper-note.log \
+	)
 
 format:
 	black .
@@ -32,8 +37,5 @@ test-unit:
 test-integration:
 	$(VENV)/bin/pytest -m integration
 
-ollama:
-	ollama serve
-
-.PHONY: install run test ollama format
+.PHONY: install run test format lint
 
