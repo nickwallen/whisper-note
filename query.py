@@ -66,7 +66,9 @@ class QueryEngine:
             )
         prompt = prompt_template.format(context=context, query=query_string)
 
-        logging.getLogger(__name__).debug(f"Built prompt: {prompt}")
+        logger = logging.getLogger(__name__)
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.debug(f"Built prompt: {self._format_log_message(prompt)}")
         return prompt
 
     def _find_similar_context(
@@ -135,3 +137,10 @@ class QueryEngine:
         if isinstance(val, list) and len(val) > 0 and isinstance(val[0], list):
             return val[0]
         return val
+
+    def _format_log_message(self, msg: str, max_length: int = 100):
+        """
+        Remove newlines and limit the length of the log message for readability.
+        """
+        single_line = msg.replace("\n", " ").replace("\r", " ")
+        return single_line[:max_length] + ("..." if len(single_line) > max_length else "")
