@@ -34,7 +34,7 @@ class TimeRangeExtractor:
             "end": "YYYY-MM-DD" or null
         }}
 
-        For example, if the user's question is "What did I do yesterday?", return {{ "start": "{yesterday}", "end": "{today}" }}.
+        For example, if the user's question is "What did I do yesterday?", return {{ "start": "{yesterday}", "end": "{yesterday}" }}.
         User question: "{query}"
         """
 

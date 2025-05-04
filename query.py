@@ -3,10 +3,9 @@ from typing import List, Any, Optional
 from embeddings import Embedder
 from time_range import TimeRangeExtractor
 from vector_store import VectorStore
-
+from datetime import datetime
 import logging
 from lang_model import LangModel, OllamaLangModel
-from datetime import datetime
 
 
 @dataclass
@@ -24,6 +23,7 @@ class QueryResult:
 
 
 class QueryEngine:
+    """Query engine generates a helpful response for user queries."""
 
     PROMPT_TEMPLATE = (
         "Given the following context and question, generate a helpful response to the user's question.\n"
@@ -43,11 +43,12 @@ class QueryEngine:
         "Context:\n{context}\n\nQuestion: {query}\nAnswer:"
     )
 
-    def __init__(self, embedder=None, vector_store=None, lang_model: LangModel = None):
+    def __init__(self, embedder=None, vector_store=None, lang_model: LangModel = None, with_time_aware_filtering: bool = True):
         self.embedder = embedder or Embedder()
         self.vector_store = vector_store or VectorStore()
         self.lang_model = lang_model or OllamaLangModel()
         self.time_range_extractor = TimeRangeExtractor(lang_model=self.lang_model)
+        self.with_time_aware_filtering = with_time_aware_filtering
 
     def query(
         self, query_string, max_results=10, prompt_template=PROMPT_TEMPLATE
@@ -56,12 +57,14 @@ class QueryEngine:
         Retrieve top matching chunks and use LangModel to answer the query using those chunks as context.
         Returns a QueryResult with the answer and the context used.
         """
-        time_range = self.time_range_extractor.extract(query_string)
+        time_range = None
+        if self.with_time_aware_filtering:
+            time_range = self.time_range_extractor.extract(query_string)
         context = self._find_similar_context(
             query_string,
             max_results=max_results,
-            start_time=time_range.start,
-            end_time=time_range.end,
+            start_time=time_range.start if time_range else None,
+            end_time=time_range.end if time_range else None,
         )
         prompt = self._build_prompt(query_string, context, prompt_template)
         answer = self.lang_model.generate(prompt)
@@ -73,8 +76,7 @@ class QueryEngine:
         similar_context: List[ContextChunk],
         prompt_template: str = PROMPT_TEMPLATE,
     ) -> str:
-        from datetime import datetime
-
+        """Build a prompt for the LLM to generate a response."""
         context_texts = [
             self.ensure_str(chunk.text) for chunk in similar_context if chunk.text
         ]
@@ -99,7 +101,6 @@ class QueryEngine:
         """
         Retrieve top matching context chunks for a single query.
         NOTE: This implementation only supports single-query (one embedding at a time).
-        If you want to support multi-query (batch queries), you must update this logic.
         """
         logging.getLogger(__name__).debug(
             f"Finding similar context for query: {query}, start_time: {start_time}, end_time: {end_time} max_results: {max_results}"

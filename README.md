@@ -67,7 +67,6 @@ Type your question and press Enter. Type 'q' or 'Ctrl+C' to end the session.
 
 ```
 
-
 ## 🛠️ Technical Architecture
 
 whisper-note uses a Retrieval-Augmented Generation (RAG) approach to generate clear summaries of your work activity from natural language queries. It combines semantic search, time-aware filtering, and creative prompting to provide accurate and relevant responses based on your own notes.
