@@ -38,6 +38,7 @@ class QueryEngine:
         "- Each bullet should represent a completed task or high-level accomplishment. If you attended a class or training, summarize it as a single bullet (e.g., 'Attended Workspaces 101 class').\n"
         "- Be brief and avoid unnecessary details or repetition.\n"
         "- Do not reference the context or say things like 'Based on the information provided...'.\n"
+        "- Today's date is {today}.\n"
         "\n"
         "Context:\n{context}\n\nQuestion: {query}\nAnswer:"
     )
@@ -70,12 +71,13 @@ class QueryEngine:
         similar_context: List[ContextChunk],
         prompt_template: str = PROMPT_TEMPLATE,
     ) -> str:
+        from datetime import datetime
         context_texts = [
             self.ensure_str(chunk.text) for chunk in similar_context if chunk.text
         ]
-        context_texts.append(self._current_date_context())
         context = "\n\n".join(context_texts)
-        prompt = prompt_template.format(context=context, query=query_string)
+        today = datetime.now().strftime("%A, %B %d, %Y")
+        prompt = prompt_template.format(context=context, query=query_string, today=today)
 
         logger = logging.getLogger(__name__)
         if logger.isEnabledFor(logging.DEBUG):
@@ -150,7 +152,7 @@ class QueryEngine:
             return val[0]
         return val
 
-    def _format_log_message(self, msg: str, max_length: int = 100):
+    def _format_log_message(self, msg: str, max_length: int = 2000):
         """
         Remove newlines and limit the length of the log message for readability.
         """
