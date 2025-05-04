@@ -49,7 +49,9 @@ class QueryEngine:
         self.lang_model = lang_model or OllamaLangModel()
         self.time_range_extractor = TimeRangeExtractor(lang_model=self.lang_model)
 
-    def query(self, query_string, max_results=10, prompt_template=PROMPT_TEMPLATE) -> QueryResult:
+    def query(
+        self, query_string, max_results=10, prompt_template=PROMPT_TEMPLATE
+    ) -> QueryResult:
         """
         Retrieve top matching chunks and use LangModel to answer the query using those chunks as context.
         Returns a QueryResult with the answer and the context used.
@@ -72,18 +74,20 @@ class QueryEngine:
         prompt_template: str = PROMPT_TEMPLATE,
     ) -> str:
         from datetime import datetime
+
         context_texts = [
             self.ensure_str(chunk.text) for chunk in similar_context if chunk.text
         ]
         context = "\n\n".join(context_texts)
         today = datetime.now().strftime("%A, %B %d, %Y")
-        prompt = prompt_template.format(context=context, query=query_string, today=today)
+        prompt = prompt_template.format(
+            context=context, query=query_string, today=today
+        )
 
         logger = logging.getLogger(__name__)
         if logger.isEnabledFor(logging.DEBUG):
             logger.debug(f"Built prompt: {self._format_log_message(prompt)}")
         return prompt
-
 
     def _find_similar_context(
         self,
@@ -157,4 +161,6 @@ class QueryEngine:
         Remove newlines and limit the length of the log message for readability.
         """
         single_line = msg.replace("\n", " ").replace("\r", " ")
-        return single_line[:max_length] + ("..." if len(single_line) > max_length else "")
+        return single_line[:max_length] + (
+            "..." if len(single_line) > max_length else ""
+        )
