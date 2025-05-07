@@ -3,3 +3,4 @@ requests
 uvicorn
 chromadb
 sentence-transformers
+python-dotenv

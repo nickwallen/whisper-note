@@ -7,10 +7,11 @@ import requests
 from rich.panel import Panel
 from rich.markup import escape
 from api import QueryResponse, ContextChunk, IndexMetricsResponse
+import dotenv
 
-WHISPER_NOTE_DAEMON_URL = (
-    "http://localhost:8000"  # Change this if your server runs elsewhere
-)
+dotenv.load_dotenv()
+
+WHISPER_NOTE_DAEMON_URL = "http://localhost:8000"
 TIMEOUT = 60  # seconds
 
 app = typer.Typer(help="Whisper Note: Index and query your files with AI.")

@@ -7,6 +7,9 @@ from query import ContextChunk, QueryEngine
 from vector_store import VectorStore
 import traceback
 import logging
+import dotenv
+
+dotenv.load_dotenv()
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)

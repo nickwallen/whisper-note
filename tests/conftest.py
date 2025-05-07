@@ -3,6 +3,9 @@ from testcontainers.ollama import OllamaContainer
 from ollama import OLLAMA_URL_ENV, OLLAMA_MODEL_ENV
 import os
 import tempfile
+from dotenv import load_dotenv
+
+load_dotenv()
 
 
 @pytest.fixture(scope="session")
