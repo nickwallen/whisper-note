@@ -1,5 +1,5 @@
-from query import QueryEngine, QueryResult, ContextChunk
 from lang_model import LangModel
+from query import QueryEngine, QueryResult, ContextChunk
 
 
 class DummyEmbedder:

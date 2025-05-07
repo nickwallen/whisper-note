@@ -5,7 +5,8 @@ from time_range import TimeRangeExtractor
 from vector_store import VectorStore
 from datetime import datetime
 import logging
-from lang_model import LangModel, OllamaLangModel
+from ollama import OllamaLangModel
+from lang_model import LangModel
 
 
 @dataclass

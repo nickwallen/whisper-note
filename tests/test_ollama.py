@@ -1,5 +1,5 @@
 import pytest
-from lang_model import OllamaLangModel
+from ollama import OllamaLangModel
 
 
 @pytest.mark.integration
