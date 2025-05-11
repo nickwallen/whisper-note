@@ -1,3 +1,4 @@
+import logging
 import os
 import requests
 from typing import Optional
@@ -18,6 +19,9 @@ class OpenRouterLangModel(LangModel):
             raise ValueError(
                 "OpenRouter API key must be set in the environment variable 'OPENROUTER_API_KEY' or passed to the constructor."
             )
+        logging.getLogger(__name__).debug(
+            f"Initialized OpenRouterLangModel with model: {self.model}"
+        )
 
     def generate(self, prompt: str) -> str:
         headers = {

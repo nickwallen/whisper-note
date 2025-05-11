@@ -50,16 +50,28 @@ class TimeRangeExtractor:
         response = self.lang_model.generate(prompt)
         try:
             data = json.loads(response)
-            time_range = TimeRange(start=None, end=None)
-            time_range.start = self._parse_date_str(data.get("start"))
-            time_range.end = self._parse_date_str(data.get("end"))
+
+            # Always use start of day for start date
+            start = self._parse_date_str(data.get("start"))
+            if start:
+                start = start.replace(hour=0, minute=0, second=0, microsecond=0)
+
+            # Always use end of day for end date
+            end = self._parse_date_str(data.get("end"))
+            if end:
+                end = end.replace(hour=23, minute=59, second=59, microsecond=0)
+
             logging.getLogger(__name__).debug(
-                f"Extracted time range from query '{query}': start={time_range.start}, end={time_range.end}"
+                f"Time range from '{query}' is start={start}, end={end}"
             )
-            return time_range
+            return TimeRange(
+                start=start,
+                end=end,
+            )
+
         except Exception as e:
             logging.getLogger(__name__).error(
-                f"Failed to extract time range from query: {query}, error: {str(e)}, response: {response}"
+                f"Failed to extract time range from '{query}', error: {str(e)}, response: {response}"
             )
             return TimeRange(start=None, end=None)
 
@@ -71,6 +83,6 @@ class TimeRangeExtractor:
             return datetime.strptime(date_str, "%Y-%m-%d")
         except Exception as e:
             logging.getLogger(__name__).error(
-                f"Failed to parse date string: {date_str}, error: {str(e)}"
+                f"Invalid date string: {date_str}, error: {str(e)}"
             )
-            return None
+        return None

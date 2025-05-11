@@ -15,7 +15,7 @@ def test_extract_good_response():
     extractor = TimeRangeExtractor(MockLangModel(response))
     result = extractor.extract("What did I do last week?")
     assert result.start == datetime(2025, 5, 1)
-    assert result.end == datetime(2025, 5, 3)
+    assert result.end == datetime(2025, 5, 3, 23, 59, 59)
 
 
 def test_extract_null_response():
@@ -50,9 +50,17 @@ def test_extract_missing_fields():
     assert result.end is None
 
 
+def test_extract_only_date_in_input():
+    response = '{"start": "2025-05-01", "end": "2025-05-03"}'
+    extractor = TimeRangeExtractor(MockLangModel(response))
+    result = extractor.extract("Test only date in input")
+    assert result.start == datetime(2025, 5, 1, 0, 0, 0)
+    assert result.end == datetime(2025, 5, 3, 23, 59, 59)
+
+
 def test_extract_invalid_date_format():
     response = '{"start": "2025/05/01", "end": "2025-05-03"}'
     extractor = TimeRangeExtractor(MockLangModel(response))
     result = extractor.extract("Invalid date format")
     assert result.start is None
-    assert result.end == datetime(2025, 5, 3)
+    assert result.end == datetime(2025, 5, 3, 23, 59, 59)

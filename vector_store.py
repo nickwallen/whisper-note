@@ -1,3 +1,4 @@
+import logging
 import chromadb
 from typing import List, Optional
 from dataclasses import dataclass, fields
@@ -119,6 +120,9 @@ class VectorStore:
             where = where_clauses[0]
         else:
             where = None
+        logging.getLogger(__name__).debug(
+            f"Querying for '{max_results}' results(s) where: {where}"
+        )
         return self.collection.query(
             query_embeddings=[embedding],
             n_results=max_results,
