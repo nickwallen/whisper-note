@@ -3,6 +3,7 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from typing import List, Optional
 from indexer import Indexer, IndexerMetrics
+from openrouter import OpenRouterLangModel
 from query import ContextChunk, QueryEngine
 from vector_store import VectorStore
 import traceback
@@ -105,7 +106,10 @@ class QueryResponse(BaseModel):
 @app.post("/api/v1/query", response_model=QueryResponse)
 def query(request: QueryRequest, collection_name: str = Depends(get_collection_name)):
     try:
-        engine = QueryEngine(vector_store=VectorStore(collection_name=collection_name))
+        engine = QueryEngine(
+            vector_store=VectorStore(collection_name=collection_name),
+            lang_model=OpenRouterLangModel(),
+        )
         result = engine.query(request.query)
         resp = QueryResponse(answer=result.answer, context=result.context)
         return resp
